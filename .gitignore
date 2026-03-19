@@ -1,6 +1,8 @@
 node_modules/
-client/node_modules/
-server/node_modules/
-client/dist/
+dist/
 .env
 .env.local
+.DS_Store
+*.log
+*.md
+!README.md

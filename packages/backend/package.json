@@ -1,0 +1,21 @@
+{
+  "name": "@blackjack/backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@blackjack/shared": "*",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-session": "^1.18.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.1"
+  }
+}
