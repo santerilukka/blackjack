@@ -15,11 +15,11 @@ function cardSvgPath(card) {
 
 function CardImage({ card }) {
   if (!card) {
-    return <img className="card card-img face-down" src="/cards/1B.svg" alt="Hidden card" />;
+    return <img className="card-img" src="/cards/1B.svg" alt="Hidden card" />;
   }
   return (
     <img
-      className="card card-img"
+      className="card-img"
       src={cardSvgPath(card)}
       alt={`${card.rank} of ${card.suit}`}
     />

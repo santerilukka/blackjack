@@ -35,6 +35,15 @@ export function resolveRound(playerHand, dealerHand, bet) {
     };
   }
 
+  // Dealer blackjack (player does not have blackjack)
+  if (dealerHand.blackjack) {
+    return {
+      outcome: OUTCOMES.LOSE,
+      payout: 0,
+      message: 'Dealer has blackjack. You lose.',
+    };
+  }
+
   // Dealer busted
   if (dealerHand.busted) {
     return {

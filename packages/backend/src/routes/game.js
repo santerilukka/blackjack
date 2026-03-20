@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { sessionGuard } from '../middleware/sessionGuard.js';
 import { getShoe, updateSession } from '../models/sessionManager.js';
-import { PHASES, ACTIONS } from '@blackjack/shared';
+import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
 import { placeBet } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
 import { startNewRound } from '../engine/round.js';
@@ -20,8 +20,16 @@ router.post('/bet', sessionGuard, (req, res) => {
     return res.status(400).json({ error: 'Cannot place bet outside of betting phase.' });
   }
 
-  if (!amount || amount <= 0 || amount > state.balance) {
+  if (!amount || typeof amount !== 'number' || amount <= 0 || amount > state.balance) {
     return res.status(400).json({ error: 'Invalid bet amount.' });
+  }
+
+  if (amount < MIN_BET) {
+    return res.status(400).json({ error: `Minimum bet is $${MIN_BET}.` });
+  }
+
+  if (amount > MAX_BET) {
+    return res.status(400).json({ error: `Maximum bet is $${MAX_BET}.` });
   }
 
   const newState = placeBet(state, shoe, amount);

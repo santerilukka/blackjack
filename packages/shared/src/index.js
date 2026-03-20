@@ -6,6 +6,8 @@ export {
   OUTCOMES,
   PAYOUTS,
   DEFAULT_BALANCE,
+  MIN_BET,
+  MAX_BET,
   NUM_DECKS,
   RESHUFFLE_THRESHOLD,
 } from './constants.js';
