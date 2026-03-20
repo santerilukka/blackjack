@@ -1,16 +1,28 @@
-const suitSymbols = {
-  hearts: '\u2665',
-  diamonds: '\u2666',
-  clubs: '\u2663',
-  spades: '\u2660',
+const suitCode = {
+  hearts: 'H',
+  diamonds: 'D',
+  clubs: 'C',
+  spades: 'S',
 };
 
-function CardText({ card }) {
-  if (!card) return <span className="card face-down">[?]</span>;
+function rankCode(rank) {
+  return rank === '10' ? 'T' : rank;
+}
+
+function cardSvgPath(card) {
+  return `/cards/${rankCode(card.rank)}${suitCode[card.suit]}.svg`;
+}
+
+function CardImage({ card }) {
+  if (!card) {
+    return <img className="card card-img face-down" src="/cards/1B.svg" alt="Hidden card" />;
+  }
   return (
-    <span className="card">
-      {card.rank}{suitSymbols[card.suit] || card.suit}
-    </span>
+    <img
+      className="card card-img"
+      src={cardSvgPath(card)}
+      alt={`${card.rank} of ${card.suit}`}
+    />
   );
 }
 
@@ -19,10 +31,12 @@ export default function HandDisplay({ label, hand, hiddenCard }) {
   return (
     <div className="hand-display">
       <strong>{label}:</strong>{' '}
-      {hand.cards.map((card, i) => (
-        <CardText key={i} card={card} />
-      ))}
-      {!showHidden && <CardText card={null} />}
+      <div className="cards-row">
+        {hand.cards.map((card, i) => (
+          <CardImage key={i} card={card} />
+        ))}
+        {!showHidden && <CardImage card={null} />}
+      </div>
       {hand.total > 0 && <span> (Total: {hand.total}{hand.soft ? ', soft' : ''})</span>}
     </div>
   );
