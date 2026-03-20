@@ -16,6 +16,7 @@ export const PHASES = {
 export const ACTIONS = {
   HIT: 'hit',
   STAND: 'stand',
+  DOUBLE: 'double',
 };
 
 /** @enum {string} */

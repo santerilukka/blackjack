@@ -60,6 +60,11 @@ export function placeBet(state, shoe, discard, amount) {
     };
   }
 
+  const availableActions = [ACTIONS.HIT, ACTIONS.STAND];
+  if (balance >= amount) {
+    availableActions.push(ACTIONS.DOUBLE);
+  }
+
   return {
     ...state,
     phase: PHASES.PLAYER_TURN,
@@ -73,7 +78,7 @@ export function placeBet(state, shoe, discard, amount) {
     outcome: null,
     message: `Bet placed: $${amount}. Your turn.`,
     shoeSize: shoe.length,
-    availableActions: [ACTIONS.HIT, ACTIONS.STAND],
+    availableActions,
   };
 }
 

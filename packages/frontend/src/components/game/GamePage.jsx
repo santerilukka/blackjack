@@ -14,6 +14,7 @@ export default function GamePage() {
     placeBet,
     hit,
     stand,
+    double,
     newRound,
   } = useGameState();
 
@@ -43,7 +44,13 @@ export default function GamePage() {
       )}
 
       {isPlayerTurn && (
-        <ActionBar onHit={hit} onStand={stand} disabled={loading} />
+        <ActionBar
+          onHit={hit}
+          onStand={stand}
+          onDouble={double}
+          disabled={loading}
+          availableActions={gameState.availableActions}
+        />
       )}
 
       {isResolved && (

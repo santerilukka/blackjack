@@ -19,6 +19,9 @@ export function executeAction(state, shoe, discard, action) {
   if (action === ACTIONS.STAND) {
     return executeStand(state, shoe, discard);
   }
+  if (action === ACTIONS.DOUBLE) {
+    return executeDouble(state, shoe, discard);
+  }
   throw new Error(`Unknown action: ${action}`);
 }
 
@@ -45,6 +48,51 @@ function executeHit(state, shoe, discard) {
     playerHand,
     shoeSize: shoe.length,
     availableActions: [ACTIONS.HIT, ACTIONS.STAND],
+  };
+}
+
+function executeDouble(state, shoe, discard) {
+  const doubleBet = state.currentBet * 2;
+  const newBalance = state.balance - state.currentBet; // deduct the additional bet
+
+  const newCards = [...state.playerHand.cards, drawCard(shoe, discard)];
+  const playerHand = evaluateHand(newCards);
+
+  if (playerHand.busted) {
+    const { outcome, payout, message } = resolveRound(playerHand, state.dealerHand, doubleBet);
+    return {
+      ...state,
+      phase: PHASES.RESOLVED,
+      playerHand,
+      currentBet: doubleBet,
+      balance: newBalance + payout,
+      outcome,
+      message,
+      shoeSize: shoe.length,
+      availableActions: [],
+    };
+  }
+
+  // Not busted — dealer plays
+  const dealerCards = [...state.dealerHand.cards];
+  if (state.dealerHand.hiddenCard) {
+    dealerCards.push(state.dealerHand.hiddenCard);
+  }
+
+  const dealerHand = playDealerTurn(dealerCards, shoe, discard);
+  const { outcome, payout, message } = resolveRound(playerHand, dealerHand, doubleBet);
+
+  return {
+    ...state,
+    phase: PHASES.RESOLVED,
+    playerHand,
+    dealerHand: { ...dealerHand, hiddenCard: null },
+    currentBet: doubleBet,
+    balance: newBalance + payout,
+    outcome,
+    message,
+    shoeSize: shoe.length,
+    availableActions: [],
   };
 }
 

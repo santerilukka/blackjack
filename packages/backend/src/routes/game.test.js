@@ -145,6 +145,45 @@ describe('POST /api/action', () => {
   });
 });
 
+describe('POST /api/action — double', () => {
+  it('double resolves the round with doubled bet', async () => {
+    const { client, betRes } = await setupRound(100);
+    if (betRes.body.phase !== PHASES.PLAYER_TURN) return;
+    if (!betRes.body.availableActions.includes(ACTIONS.DOUBLE)) return;
+
+    const res = await client.post('/api/action').send({ action: ACTIONS.DOUBLE });
+    expect(res.status).toBe(200);
+    expect(res.body.phase).toBe(PHASES.RESOLVED);
+    expect(res.body.currentBet).toBe(200);
+    expect(res.body.playerHand.cards).toHaveLength(3);
+    expect(res.body.dealerHand.hiddenCard).toBeNull();
+    expect(res.body.availableActions).toEqual([]);
+  });
+
+  it('rejects double after hitting (not in availableActions)', async () => {
+    const { client, betRes } = await setupRound(100);
+    if (betRes.body.phase !== PHASES.PLAYER_TURN) return;
+
+    // Hit first — double should no longer be available
+    const hitRes = await client.post('/api/action').send({ action: ACTIONS.HIT });
+    if (hitRes.body.phase !== PHASES.PLAYER_TURN) return;
+
+    const res = await client.post('/api/action').send({ action: ACTIONS.DOUBLE });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/not available/i);
+  });
+
+  it('double not offered when balance insufficient', async () => {
+    // Bet the full balance so there's nothing left to double
+    const client = agent();
+    await client.post('/api/session');
+    const betRes = await client.post('/api/bet').send({ amount: DEFAULT_BALANCE });
+
+    if (betRes.body.phase !== PHASES.PLAYER_TURN) return;
+    expect(betRes.body.availableActions).not.toContain(ACTIONS.DOUBLE);
+  });
+});
+
 describe('POST /api/new-round', () => {
   it('starts a new round after resolution', async () => {
     const { client, betRes } = await setupRound(100);

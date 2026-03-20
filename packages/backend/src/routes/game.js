@@ -54,6 +54,10 @@ router.post('/action', sessionGuard, (req, res) => {
     return res.status(400).json({ error: `Invalid action: ${action}` });
   }
 
+  if (!state.availableActions.includes(action)) {
+    return res.status(400).json({ error: `Action not available: ${action}` });
+  }
+
   const discard = getDiscard(req.gameSessionId);
   const newState = executeAction(state, shoe, discard, action);
   updateSession(req.gameSessionId, newState);

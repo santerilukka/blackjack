@@ -124,6 +124,11 @@
   color: #fff;
 }
 
+.action-bar .double-btn {
+  background: #ff9800;
+  color: #fff;
+}
+
 .action-bar button:last-child {
   background: #f44336;
   color: #fff;

@@ -195,6 +195,79 @@ describe('executeAction — stand', () => {
   });
 });
 
+describe('executeAction — double', () => {
+  it('draws exactly one card and resolves', () => {
+    // Player: 10+8=18, Dealer: 5+K=15, draws 3 → 18
+    const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
+    const shoe = buildShoe(card('3'));
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    expect(result.phase).toBe(PHASES.RESOLVED);
+    expect(result.playerHand.cards).toHaveLength(3);
+  });
+
+  it('doubles the current bet', () => {
+    const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
+    const shoe = buildShoe(card('3'));
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    expect(result.currentBet).toBe(200);
+  });
+
+  it('deducts additional bet from balance before payout', () => {
+    // Player: 10+8+3=21, Dealer: 5+K=15, draws 3 → 18 → player wins
+    const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
+    const shoe = buildShoe(card('3'), card('3')); // player gets 3, dealer draws 3
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    // Balance was 900, additional 100 deducted → 800, then win payout 2x200=400
+    expect(result.outcome).toBe(OUTCOMES.WIN);
+    expect(result.balance).toBe(800 + 400);
+  });
+
+  it('resolves as lose on bust with doubled bet', () => {
+    // Player: 10+8=18, draws 7 → 25 bust
+    const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
+    const shoe = buildShoe(card('7'));
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    expect(result.phase).toBe(PHASES.RESOLVED);
+    expect(result.outcome).toBe(OUTCOMES.LOSE);
+    expect(result.playerHand.busted).toBe(true);
+    expect(result.currentBet).toBe(200);
+    // Bust payout is 0, balance = 900 - 100 (extra bet) + 0 = 800
+    expect(result.balance).toBe(800);
+  });
+
+  it('push returns doubled bet', () => {
+    // Player: 10+8+2=20, Dealer: 10+K=20 → push
+    const state = makeState([card('10'), card('8')], card('10'), card('K'), 900, 100);
+    const shoe = buildShoe(card('2'));
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    expect(result.outcome).toBe(OUTCOMES.PUSH);
+    // Balance 900 - 100 extra = 800, push returns 1x200 = 200
+    expect(result.balance).toBe(800 + 200);
+  });
+
+  it('reveals dealer hidden card', () => {
+    const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
+    const shoe = buildShoe(card('3'), card('3'));
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    expect(result.dealerHand.hiddenCard).toBeNull();
+    expect(result.dealerHand.cards.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('no available actions after double', () => {
+    const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
+    const shoe = buildShoe(card('3'), card('3'));
+    const result = executeAction(state, shoe, [], ACTIONS.DOUBLE);
+
+    expect(result.availableActions).toEqual([]);
+  });
+});
+
 describe('executeAction — invalid action', () => {
   it('throws on unknown action', () => {
     const state = makeState([card('10'), card('8')], card('5'), card('K'));

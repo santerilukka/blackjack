@@ -24,6 +24,7 @@ export function useGameState() {
   const placeBet = useCallback(wrapAsync(api.placeBet), [wrapAsync]);
   const hit = useCallback(wrapAsync(() => api.playerAction('hit')), [wrapAsync]);
   const stand = useCallback(wrapAsync(() => api.playerAction('stand')), [wrapAsync]);
+  const double = useCallback(wrapAsync(() => api.playerAction('double')), [wrapAsync]);
   const newRound = useCallback(wrapAsync(api.newRound), [wrapAsync]);
 
   return {
@@ -35,6 +36,7 @@ export function useGameState() {
     placeBet,
     hit,
     stand,
+    double,
     newRound,
   };
 }

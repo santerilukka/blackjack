@@ -52,10 +52,17 @@ describe('placeBet', () => {
     expect(result.currentBet).toBe(50);
   });
 
-  it('provides hit and stand as available actions', () => {
+  it('provides hit, stand, and double as available actions when balance allows', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
     const result = placeBet(state, shoe, [], 100);
+    expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND, ACTIONS.DOUBLE]);
+  });
+
+  it('does not offer double when remaining balance is less than bet', () => {
+    const state = createDefaultGameState('test-session');
+    const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
+    const result = placeBet(state, shoe, [], DEFAULT_BALANCE);
     expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND]);
   });
 
@@ -119,7 +126,8 @@ describe('placeBet', () => {
     const result = placeBet(state, shoe, [], 100);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
-    expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND]);
+    expect(result.availableActions).toContain(ACTIONS.HIT);
+    expect(result.availableActions).toContain(ACTIONS.STAND);
   });
 
   it('tracks shoe size', () => {
