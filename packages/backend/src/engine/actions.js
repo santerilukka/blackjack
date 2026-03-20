@@ -30,11 +30,18 @@ function executeHit(state, shoe, discard) {
   const playerHand = evaluateHand(newCards);
 
   if (playerHand.busted) {
-    const { outcome, payout, message } = resolveRound(playerHand, state.dealerHand, state.currentBet);
+    // Reveal dealer hidden card — round is over
+    const revealedDealerCards = [...state.dealerHand.cards];
+    if (state.dealerHand.hiddenCard) {
+      revealedDealerCards.push(state.dealerHand.hiddenCard);
+    }
+    const revealedDealerHand = { ...evaluateHand(revealedDealerCards), hiddenCard: null };
+    const { outcome, payout, message } = resolveRound(playerHand, revealedDealerHand, state.currentBet);
     return {
       ...state,
       phase: PHASES.RESOLVED,
       playerHand,
+      dealerHand: revealedDealerHand,
       outcome,
       message,
       balance: state.balance + payout,
@@ -59,11 +66,18 @@ function executeDouble(state, shoe, discard) {
   const playerHand = evaluateHand(newCards);
 
   if (playerHand.busted) {
-    const { outcome, payout, message } = resolveRound(playerHand, state.dealerHand, doubleBet);
+    // Reveal dealer hidden card — round is over
+    const revealedDealerCards = [...state.dealerHand.cards];
+    if (state.dealerHand.hiddenCard) {
+      revealedDealerCards.push(state.dealerHand.hiddenCard);
+    }
+    const revealedDealerHand = { ...evaluateHand(revealedDealerCards), hiddenCard: null };
+    const { outcome, payout, message } = resolveRound(playerHand, revealedDealerHand, doubleBet);
     return {
       ...state,
       phase: PHASES.RESOLVED,
       playerHand,
+      dealerHand: revealedDealerHand,
       currentBet: doubleBet,
       balance: newBalance + payout,
       outcome,

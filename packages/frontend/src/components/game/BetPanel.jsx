@@ -1,10 +1,6 @@
-import { useState } from 'react';
-
 const CHIP_VALUES = [5, 10, 25, 50, 100];
 
-export default function BetPanel({ balance, onPlaceBet, disabled }) {
-  const [betAmount, setBetAmount] = useState(10);
-
+export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlaceBet, disabled }) {
   function handleBet() {
     if (betAmount > 0 && betAmount <= balance) {
       onPlaceBet(betAmount);
@@ -14,14 +10,15 @@ export default function BetPanel({ balance, onPlaceBet, disabled }) {
   return (
     <div className="bet-panel">
       <div className="chips">
-        {CHIP_VALUES.map((value) => (
+        {CHIP_VALUES.map((value, index) => (
           <button
             key={value}
             className={`chip ${betAmount === value ? 'selected' : ''}`}
-            onClick={() => setBetAmount(value)}
+            onClick={() => onBetAmountChange(value)}
             disabled={disabled}
           >
             ${value}
+            <span className="chip-hint">{index + 1}</span>
           </button>
         ))}
       </div>
@@ -31,3 +28,5 @@ export default function BetPanel({ balance, onPlaceBet, disabled }) {
     </div>
   );
 }
+
+export { CHIP_VALUES };
