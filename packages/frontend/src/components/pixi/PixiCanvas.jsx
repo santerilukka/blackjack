@@ -31,7 +31,7 @@ export default function PixiCanvas({ gameState, width = 800, height = 500 }) {
 
     // Clear the scene when returning to betting phase (new round)
     if (gameState.phase === 'betting' && gameState.playerHand.cards.length === 0) {
-      sceneRef.current.clear();
+      sceneRef.current.clear(gameState.shoeSize);
       return;
     }
 

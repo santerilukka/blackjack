@@ -8,17 +8,22 @@ const sessions = new Map();
 /** @type {Map<string, object[]>} */
 const shoes = new Map();
 
+/** @type {Map<string, object[]>} */
+const discards = new Map();
+
 /**
  * Create a new game session.
- * @returns {{ state: import('@blackjack/shared').GameState, shoe: object[] }}
+ * @returns {{ state: import('@blackjack/shared').GameState, shoe: object[], discard: object[] }}
  */
 export function createSession() {
   const sessionId = crypto.randomUUID();
   const state = createDefaultGameState(sessionId);
   const shoe = createShoe();
+  const discard = [];
   sessions.set(sessionId, state);
   shoes.set(sessionId, shoe);
-  return { state, shoe };
+  discards.set(sessionId, discard);
+  return { state, shoe, discard };
 }
 
 /**
@@ -40,6 +45,15 @@ export function getShoe(sessionId) {
 }
 
 /**
+ * Get discard pile by session ID.
+ * @param {string} sessionId
+ * @returns {object[] | undefined}
+ */
+export function getDiscard(sessionId) {
+  return discards.get(sessionId);
+}
+
+/**
  * Update game state for a session.
  * @param {string} sessionId
  * @param {import('@blackjack/shared').GameState} state
@@ -55,4 +69,5 @@ export function updateSession(sessionId, state) {
 export function deleteSession(sessionId) {
   sessions.delete(sessionId);
   shoes.delete(sessionId);
+  discards.delete(sessionId);
 }

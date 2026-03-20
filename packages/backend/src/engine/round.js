@@ -8,17 +8,18 @@ import { resolveRound } from './resolver.js';
  * Place a bet and deal initial cards.
  * @param {import('@blackjack/shared').GameState} state
  * @param {import('@blackjack/shared').Card[]} shoe
+ * @param {import('@blackjack/shared').Card[]} discard
  * @param {number} amount
  * @returns {import('@blackjack/shared').GameState}
  */
-export function placeBet(state, shoe, amount) {
+export function placeBet(state, shoe, discard, amount) {
   const balance = state.balance - amount;
 
   // Deal alternating: player, dealer, player, dealer (real blackjack order)
-  const playerCard1 = drawCard(shoe);
-  const dealerFaceUp = drawCard(shoe);
-  const playerCard2 = drawCard(shoe);
-  const dealerHidden = drawCard(shoe);
+  const playerCard1 = drawCard(shoe, discard);
+  const dealerFaceUp = drawCard(shoe, discard);
+  const playerCard2 = drawCard(shoe, discard);
+  const dealerHidden = drawCard(shoe, discard);
   const playerCards = [playerCard1, playerCard2];
 
   const playerHand = evaluateHand(playerCards);
@@ -78,11 +79,24 @@ export function placeBet(state, shoe, amount) {
 
 /**
  * Start a new round (reset hands, keep balance).
+ * Collects all cards from the previous round into the discard pile.
  * @param {import('@blackjack/shared').GameState} state
  * @param {import('@blackjack/shared').Card[]} shoe
+ * @param {import('@blackjack/shared').Card[]} discard
  * @returns {import('@blackjack/shared').GameState}
  */
-export function startNewRound(state, shoe) {
+export function startNewRound(state, shoe, discard) {
+  // Collect table cards into discard pile
+  if (state.playerHand.cards.length > 0) {
+    discard.push(...state.playerHand.cards);
+  }
+  if (state.dealerHand.cards.length > 0) {
+    discard.push(...state.dealerHand.cards);
+  }
+  if (state.dealerHand.hiddenCard) {
+    discard.push(state.dealerHand.hiddenCard);
+  }
+
   return {
     ...state,
     phase: PHASES.BETTING,

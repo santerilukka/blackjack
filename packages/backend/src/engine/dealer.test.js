@@ -16,7 +16,7 @@ describe('playDealerTurn', () => {
   it('stands on hard 17', () => {
     const dealerCards = [card('10'), card('7')];
     const shoe = buildShoe();
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(17);
     expect(hand.cards).toHaveLength(2);
   });
@@ -24,14 +24,14 @@ describe('playDealerTurn', () => {
   it('stands on hard 18', () => {
     const dealerCards = [card('10'), card('8')];
     const shoe = buildShoe();
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(18);
   });
 
   it('hits on soft 17 (ace + 6)', () => {
     const dealerCards = [card('A'), card('6')];
     const shoe = buildShoe(card('2'));
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     // A(11)+6+2 = 19, soft → stands
     expect(hand.total).toBe(19);
     expect(hand.cards).toHaveLength(3);
@@ -40,7 +40,7 @@ describe('playDealerTurn', () => {
   it('hits on 16', () => {
     const dealerCards = [card('10'), card('6')]; // 16
     const shoe = buildShoe(card('2')); // 16+2=18 → stand
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(18);
     expect(hand.cards).toHaveLength(3);
   });
@@ -48,7 +48,7 @@ describe('playDealerTurn', () => {
   it('dealer can bust', () => {
     const dealerCards = [card('10'), card('4')]; // 14
     const shoe = buildShoe(card('K')); // 14+10=24 bust
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(24);
     expect(hand.busted).toBe(true);
   });
@@ -56,7 +56,7 @@ describe('playDealerTurn', () => {
   it('draws multiple cards to reach 17+', () => {
     const dealerCards = [card('2'), card('3')]; // 5
     const shoe = buildShoe(card('4'), card('3'), card('7')); // 5+4=9, 9+3=12, 12+7=19
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(19);
     expect(hand.cards).toHaveLength(5);
   });
@@ -65,7 +65,7 @@ describe('playDealerTurn', () => {
     // A + 6 = soft 17 → hit → draw 10 → A(1)+6+10 = 17 hard → stand
     const dealerCards = [card('A'), card('6')];
     const shoe = buildShoe(card('Q'));
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     // A(11)+6+Q(10) = 27 → ace downgrades → 1+6+10 = 17 hard
     expect(hand.total).toBe(17);
     expect(hand.soft).toBe(false);
@@ -75,7 +75,7 @@ describe('playDealerTurn', () => {
   it('stands on soft 18', () => {
     const dealerCards = [card('A'), card('7')]; // soft 18
     const shoe = buildShoe();
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(18);
     expect(hand.soft).toBe(true);
   });
@@ -83,7 +83,7 @@ describe('playDealerTurn', () => {
   it('stands on 21 (blackjack)', () => {
     const dealerCards = [card('A'), card('K')]; // 21
     const shoe = buildShoe();
-    const hand = playDealerTurn(dealerCards, shoe);
+    const hand = playDealerTurn(dealerCards, shoe, []);
     expect(hand.total).toBe(21);
     expect(hand.cards).toHaveLength(2);
   });

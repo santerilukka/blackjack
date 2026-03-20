@@ -100,7 +100,7 @@ describe('executeAction — hit', () => {
   it('adds a card to player hand', () => {
     const state = makeState([card('8'), card('5')], card('10'), card('7'));
     const shoe = buildShoe(card('3'));
-    const result = executeAction(state, shoe, ACTIONS.HIT);
+    const result = executeAction(state, shoe, [], ACTIONS.HIT);
 
     expect(result.playerHand.cards).toHaveLength(3);
     expect(result.playerHand.total).toBe(16); // 8+5+3
@@ -109,7 +109,7 @@ describe('executeAction — hit', () => {
   it('stays in playerTurn if not busted', () => {
     const state = makeState([card('8'), card('5')], card('10'), card('7'));
     const shoe = buildShoe(card('3'));
-    const result = executeAction(state, shoe, ACTIONS.HIT);
+    const result = executeAction(state, shoe, [], ACTIONS.HIT);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
     expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND]);
@@ -118,7 +118,7 @@ describe('executeAction — hit', () => {
   it('resolves as lose if player busts', () => {
     const state = makeState([card('10'), card('8')], card('5'), card('K'));
     const shoe = buildShoe(card('7')); // 10+8+7 = 25 bust
-    const result = executeAction(state, shoe, ACTIONS.HIT);
+    const result = executeAction(state, shoe, [], ACTIONS.HIT);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.LOSE);
@@ -129,7 +129,7 @@ describe('executeAction — hit', () => {
   it('balance unchanged on bust (payout is 0)', () => {
     const state = makeState([card('10'), card('8')], card('5'), card('K'), 900, 100);
     const shoe = buildShoe(card('7'));
-    const result = executeAction(state, shoe, ACTIONS.HIT);
+    const result = executeAction(state, shoe, [], ACTIONS.HIT);
 
     // Bust payout is 0, so balance stays at 900
     expect(result.balance).toBe(900);
@@ -138,7 +138,7 @@ describe('executeAction — hit', () => {
   it('updates shoe size', () => {
     const state = makeState([card('8'), card('5')], card('10'), card('7'));
     const shoe = buildShoe(card('3'));
-    const result = executeAction(state, shoe, ACTIONS.HIT);
+    const result = executeAction(state, shoe, [], ACTIONS.HIT);
 
     expect(result.shoeSize).toBe(shoe.length);
   });
@@ -149,7 +149,7 @@ describe('executeAction — stand', () => {
     // Player: 10+8=18, Dealer: 5 face-up + K hidden = 15, draws 3 → 18
     const state = makeState([card('10'), card('8')], card('5'), card('K'));
     const shoe = buildShoe(card('3')); // dealer draws: 5+K+3=18
-    const result = executeAction(state, shoe, ACTIONS.STAND);
+    const result = executeAction(state, shoe, [], ACTIONS.STAND);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.dealerHand.hiddenCard).toBeNull();
@@ -160,7 +160,7 @@ describe('executeAction — stand', () => {
     // Player: 10+8=18, Dealer: 6+K=16, draws 10 → 26 bust
     const state = makeState([card('10'), card('8')], card('6'), card('K'));
     const shoe = buildShoe(card('10'));
-    const result = executeAction(state, shoe, ACTIONS.STAND);
+    const result = executeAction(state, shoe, [], ACTIONS.STAND);
 
     expect(result.outcome).toBe(OUTCOMES.WIN);
     expect(result.balance).toBe(900 + 200); // win pays 2x
@@ -170,7 +170,7 @@ describe('executeAction — stand', () => {
     // Player: 5+5=10, Dealer: 10+K=20
     const state = makeState([card('5'), card('5')], card('10'), card('K'));
     const shoe = buildShoe();
-    const result = executeAction(state, shoe, ACTIONS.STAND);
+    const result = executeAction(state, shoe, [], ACTIONS.STAND);
 
     expect(result.outcome).toBe(OUTCOMES.LOSE);
     expect(result.balance).toBe(900);
@@ -180,7 +180,7 @@ describe('executeAction — stand', () => {
     // Player: 10+8=18, Dealer: 10+8=18
     const state = makeState([card('10'), card('8')], card('10'), card('8'));
     const shoe = buildShoe();
-    const result = executeAction(state, shoe, ACTIONS.STAND);
+    const result = executeAction(state, shoe, [], ACTIONS.STAND);
 
     expect(result.outcome).toBe(OUTCOMES.PUSH);
     expect(result.balance).toBe(900 + 100); // bet returned
@@ -189,7 +189,7 @@ describe('executeAction — stand', () => {
   it('no available actions after stand', () => {
     const state = makeState([card('10'), card('8')], card('10'), card('7'));
     const shoe = buildShoe();
-    const result = executeAction(state, shoe, ACTIONS.STAND);
+    const result = executeAction(state, shoe, [], ACTIONS.STAND);
 
     expect(result.availableActions).toEqual([]);
   });
@@ -199,6 +199,6 @@ describe('executeAction — invalid action', () => {
   it('throws on unknown action', () => {
     const state = makeState([card('10'), card('8')], card('5'), card('K'));
     const shoe = buildShoe();
-    expect(() => executeAction(state, shoe, 'split')).toThrow('Unknown action: split');
+    expect(() => executeAction(state, shoe, [], 'split')).toThrow('Unknown action: split');
   });
 });

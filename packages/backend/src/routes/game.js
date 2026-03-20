@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { sessionGuard } from '../middleware/sessionGuard.js';
-import { getShoe, updateSession } from '../models/sessionManager.js';
+import { getShoe, getDiscard, updateSession } from '../models/sessionManager.js';
 import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
 import { placeBet } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
@@ -15,6 +15,7 @@ router.post('/bet', sessionGuard, (req, res) => {
   const { amount } = req.body;
   const state = req.gameState;
   const shoe = getShoe(req.gameSessionId);
+  const discard = getDiscard(req.gameSessionId);
 
   if (state.phase !== PHASES.BETTING) {
     return res.status(400).json({ error: 'Cannot place bet outside of betting phase.' });
@@ -32,7 +33,7 @@ router.post('/bet', sessionGuard, (req, res) => {
     return res.status(400).json({ error: `Maximum bet is $${MAX_BET}.` });
   }
 
-  const newState = placeBet(state, shoe, amount);
+  const newState = placeBet(state, shoe, discard, amount);
   updateSession(req.gameSessionId, newState);
   res.json(newState);
 });
@@ -53,7 +54,8 @@ router.post('/action', sessionGuard, (req, res) => {
     return res.status(400).json({ error: `Invalid action: ${action}` });
   }
 
-  const newState = executeAction(state, shoe, action);
+  const discard = getDiscard(req.gameSessionId);
+  const newState = executeAction(state, shoe, discard, action);
   updateSession(req.gameSessionId, newState);
   res.json(newState);
 });
@@ -69,7 +71,8 @@ router.post('/new-round', sessionGuard, (req, res) => {
     return res.status(400).json({ error: 'Can only start a new round after resolution.' });
   }
 
-  const newState = startNewRound(state, shoe);
+  const discard = getDiscard(req.gameSessionId);
+  const newState = startNewRound(state, shoe, discard);
   updateSession(req.gameSessionId, newState);
   res.json(newState);
 });

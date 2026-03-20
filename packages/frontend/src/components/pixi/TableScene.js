@@ -8,6 +8,10 @@ const DEALER_Y = 30;
 const PLAYER_Y = 290;
 const LABEL_OFFSET_Y = -5;
 
+const STACK_CARD_HEIGHT = 100;
+const STACK_LAYER_OFFSET = 2; // px offset per card layer in the stack
+const STACK_MAX_LAYERS = 5;   // visual cap for stacked cards
+
 /**
  * TableScene manages the visual layout of the blackjack table on a PixiJS stage.
  * It holds dealer and player hand containers and provides methods to sync
@@ -49,8 +53,35 @@ export class TableScene {
     this.playerCards.y = PLAYER_Y + 20;
     this.root.addChild(this.playerCards);
 
+    // Shoe (right side, upper half)
+    this.shoeContainer = new Container();
+    this.shoeContainer.x = this.app.screen.width - 120;
+    this.shoeContainer.y = DEALER_Y + 20;
+    this.root.addChild(this.shoeContainer);
+
+    this.shoeLabel = new Text({ text: '', style: { fill: '#cccccc', fontSize: 13, fontFamily: 'sans-serif' } });
+    this.shoeLabel.anchor = { x: 0.5, y: 0 };
+    this.shoeLabel.x = this.app.screen.width - 120 + 35;
+    this.shoeLabel.y = DEALER_Y + 20 + STACK_CARD_HEIGHT + 8;
+    this.root.addChild(this.shoeLabel);
+
+    // Discard pile (right side, lower half)
+    this.discardContainer = new Container();
+    this.discardContainer.x = this.app.screen.width - 120;
+    this.discardContainer.y = PLAYER_Y + 20;
+    this.root.addChild(this.discardContainer);
+
+    this.discardLabel = new Text({ text: '', style: { fill: '#cccccc', fontSize: 13, fontFamily: 'sans-serif' } });
+    this.discardLabel.anchor = { x: 0.5, y: 0 };
+    this.discardLabel.x = this.app.screen.width - 120 + 35;
+    this.discardLabel.y = PLAYER_Y + 20 + STACK_CARD_HEIGHT + 8;
+    this.root.addChild(this.discardLabel);
+
     /** Track what's currently rendered to diff against new state */
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
+    this._shoeSize = 0;
+    this._discardCount = 0;
+    this._totalCards = 0;
   }
 
   _drawFelt() {
@@ -66,6 +97,57 @@ export class TableScene {
     g.lineTo(this.app.screen.width - 40, midY);
     g.stroke({ color: 'rgba(255,255,255,0.15)', width: 1 });
     this.root.addChildAt(g, 0);
+  }
+
+  /**
+   * Build or update a card-back stack visual (shoe or discard pile).
+   * @param {Container} container
+   * @param {number} count - number of cards in the stack
+   * @returns {Promise<void>}
+   */
+  async _buildStack(container, count) {
+    container.removeChildren();
+    if (count <= 0) return;
+
+    // Scale layers: more cards = more visible layers (up to max)
+    const layers = Math.min(STACK_MAX_LAYERS, Math.max(1, Math.ceil(count / 60)));
+
+    for (let i = 0; i < layers; i++) {
+      const card = await createCardSprite(null, { height: STACK_CARD_HEIGHT });
+      card.x = i * STACK_LAYER_OFFSET;
+      card.y = (layers - 1 - i) * STACK_LAYER_OFFSET;
+      container.addChild(card);
+    }
+  }
+
+  /**
+   * Update the shoe and discard pile visuals.
+   * Total cards in play = shoe + on-table + discard (constant until reshuffle).
+   *
+   * @param {number} shoeSize
+   * @param {number} cardsOnTable - total cards currently visible on the table
+   */
+  async _updateStacks(shoeSize, cardsOnTable) {
+    // On first update or after a reshuffle (shoe grew), reset the total
+    if (this._totalCards === 0 || shoeSize > this._shoeSize) {
+      this._totalCards = shoeSize + cardsOnTable;
+    }
+
+    const discardCount = Math.max(0, this._totalCards - shoeSize - cardsOnTable);
+
+    // Shoe
+    if (shoeSize !== this._shoeSize) {
+      this._shoeSize = shoeSize;
+      await this._buildStack(this.shoeContainer, shoeSize);
+    }
+    this.shoeLabel.text = `Shoe: ${shoeSize}`;
+
+    // Discard pile
+    if (discardCount !== this._discardCount) {
+      this._discardCount = discardCount;
+      await this._buildStack(this.discardContainer, discardCount);
+    }
+    this.discardLabel.text = discardCount > 0 ? `Discard: ${discardCount}` : '';
   }
 
   /**
@@ -126,6 +208,11 @@ export class TableScene {
       playerCards: playerCardKeys,
       phase,
     };
+
+    // Update shoe and discard pile (counts visible cards including hidden placeholder)
+    const cardsOnTable = dealerHand.cards.length + playerHand.cards.length +
+      (showDealerHidden ? 1 : 0);
+    this._updateStacks(gameState.shoeSize, cardsOnTable);
   }
 
   /**
@@ -192,12 +279,19 @@ export class TableScene {
     }
   }
 
-  /** Remove all cards from the scene (e.g. new round). */
-  clear() {
+  /**
+   * Remove all cards from the scene (e.g. new round).
+   * @param {number} [shoeSize] - current shoe size to update the stacks
+   */
+  clear(shoeSize) {
     this.animationQueue.clear();
     this.dealerCards.removeChildren();
     this.playerCards.removeChildren();
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
+
+    if (shoeSize != null) {
+      this._updateStacks(shoeSize, 0);
+    }
   }
 
   destroy() {

@@ -30,17 +30,29 @@ export function shuffle(array) {
 }
 
 /**
- * Draw a card from the shoe. Reshuffles if needed.
+ * Draw a card from the shoe. Reshuffles remaining shoe + discard pile if needed.
  * @param {import('@blackjack/shared').Card[]} shoe
+ * @param {import('@blackjack/shared').Card[]} discard
  * @returns {import('@blackjack/shared').Card}
  */
-export function drawCard(shoe) {
+export function drawCard(shoe, discard) {
   if (needsReshuffle(shoe)) {
-    const newShoe = createShoe();
-    shoe.length = 0;
-    shoe.push(...newShoe);
+    reshuffleShoe(shoe, discard);
   }
   return shoe.pop();
+}
+
+/**
+ * Combine remaining shoe cards with the discard pile, shuffle, and reset.
+ * @param {import('@blackjack/shared').Card[]} shoe
+ * @param {import('@blackjack/shared').Card[]} discard
+ */
+export function reshuffleShoe(shoe, discard) {
+  const combined = [...shoe, ...discard];
+  discard.length = 0;
+  shuffle(combined);
+  shoe.length = 0;
+  shoe.push(...combined);
 }
 
 /**

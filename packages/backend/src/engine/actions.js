@@ -8,21 +8,22 @@ import { resolveRound } from './resolver.js';
  * Execute a player action (hit or stand) and return updated game state.
  * @param {import('@blackjack/shared').GameState} state
  * @param {import('@blackjack/shared').Card[]} shoe
+ * @param {import('@blackjack/shared').Card[]} discard
  * @param {string} action
  * @returns {import('@blackjack/shared').GameState}
  */
-export function executeAction(state, shoe, action) {
+export function executeAction(state, shoe, discard, action) {
   if (action === ACTIONS.HIT) {
-    return executeHit(state, shoe);
+    return executeHit(state, shoe, discard);
   }
   if (action === ACTIONS.STAND) {
-    return executeStand(state, shoe);
+    return executeStand(state, shoe, discard);
   }
   throw new Error(`Unknown action: ${action}`);
 }
 
-function executeHit(state, shoe) {
-  const newCards = [...state.playerHand.cards, drawCard(shoe)];
+function executeHit(state, shoe, discard) {
+  const newCards = [...state.playerHand.cards, drawCard(shoe, discard)];
   const playerHand = evaluateHand(newCards);
 
   if (playerHand.busted) {
@@ -47,14 +48,14 @@ function executeHit(state, shoe) {
   };
 }
 
-function executeStand(state, shoe) {
+function executeStand(state, shoe, discard) {
   // Reveal dealer hidden card and play dealer turn
   const dealerCards = [...state.dealerHand.cards];
   if (state.dealerHand.hiddenCard) {
     dealerCards.push(state.dealerHand.hiddenCard);
   }
 
-  const dealerHand = playDealerTurn(dealerCards, shoe);
+  const dealerHand = playDealerTurn(dealerCards, shoe, discard);
   const { outcome, payout, message } = resolveRound(state.playerHand, dealerHand, state.currentBet);
 
   return {

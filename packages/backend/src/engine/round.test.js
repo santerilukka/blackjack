@@ -20,7 +20,7 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
 
     expect(result.playerHand.cards).toHaveLength(2);
     expect(result.playerHand.cards[0]).toEqual(card('8'));
@@ -34,35 +34,35 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
     expect(result.balance).toBe(DEFAULT_BALANCE - 100);
   });
 
   it('sets phase to playerTurn for normal hand', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
   });
 
   it('sets currentBet', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 50);
+    const result = placeBet(state, shoe, [], 50);
     expect(result.currentBet).toBe(50);
   });
 
   it('provides hit and stand as available actions', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
     expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND]);
   });
 
   it('evaluates player hand total', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
     expect(result.playerHand.total).toBe(17);
   });
 
@@ -70,7 +70,7 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('A'), card('5'), card('K'), card('7'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.BLACKJACK);
@@ -86,7 +86,7 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('A'), card('Q'), card('K'), card('A', 'spades'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.PUSH);
@@ -99,7 +99,7 @@ describe('placeBet', () => {
     // Player gets 8+9=17, dealer gets A+K=blackjack
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('8'), card('A'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.LOSE);
@@ -116,7 +116,7 @@ describe('placeBet', () => {
     // Dealer face-up is 5 — no peek even though hidden card is A
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('A'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
     expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND]);
@@ -126,14 +126,14 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
     const initialSize = shoe.length;
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
     expect(result.shoeSize).toBe(initialSize - 4);
   });
 
   it('preserves sessionId', () => {
     const state = createDefaultGameState('my-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, 100);
+    const result = placeBet(state, shoe, [], 100);
     expect(result.sessionId).toBe('my-session');
   });
 });
@@ -148,7 +148,7 @@ describe('startNewRound', () => {
       outcome: OUTCOMES.WIN,
     };
     const shoe = Array(300).fill(card('2'));
-    const result = startNewRound(state, shoe);
+    const result = startNewRound(state, shoe, []);
     expect(result.phase).toBe(PHASES.BETTING);
   });
 
@@ -159,7 +159,7 @@ describe('startNewRound', () => {
       balance: 750,
     };
     const shoe = Array(300).fill(card('2'));
-    const result = startNewRound(state, shoe);
+    const result = startNewRound(state, shoe, []);
     expect(result.balance).toBe(750);
   });
 
@@ -169,7 +169,7 @@ describe('startNewRound', () => {
       playerHand: { cards: [card('K')], total: 10, soft: false, busted: false, blackjack: false },
     };
     const shoe = Array(300).fill(card('2'));
-    const result = startNewRound(state, shoe);
+    const result = startNewRound(state, shoe, []);
     expect(result.playerHand.cards).toEqual([]);
     expect(result.playerHand.total).toBe(0);
     expect(result.dealerHand.cards).toEqual([]);
@@ -183,7 +183,7 @@ describe('startNewRound', () => {
       currentBet: 100,
     };
     const shoe = Array(300).fill(card('2'));
-    const result = startNewRound(state, shoe);
+    const result = startNewRound(state, shoe, []);
     expect(result.outcome).toBeNull();
     expect(result.currentBet).toBe(0);
     expect(result.availableActions).toEqual([]);
@@ -192,14 +192,14 @@ describe('startNewRound', () => {
   it('updates shoe size', () => {
     const state = createDefaultGameState('test-session');
     const shoe = Array(200).fill(card('2'));
-    const result = startNewRound(state, shoe);
+    const result = startNewRound(state, shoe, []);
     expect(result.shoeSize).toBe(200);
   });
 
   it('preserves sessionId', () => {
     const state = createDefaultGameState('keep-this-id');
     const shoe = Array(300).fill(card('2'));
-    const result = startNewRound(state, shoe);
+    const result = startNewRound(state, shoe, []);
     expect(result.sessionId).toBe('keep-this-id');
   });
 });
