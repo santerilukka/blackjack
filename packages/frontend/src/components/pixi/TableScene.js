@@ -12,6 +12,20 @@ const STACK_CARD_HEIGHT = 100;
 const STACK_LAYER_OFFSET = 2; // px offset per card layer in the stack
 const STACK_MAX_LAYERS = 5;   // visual cap for stacked cards
 
+// Betting spot
+const BET_CIRCLE_X = 50;
+const BET_CIRCLE_Y = 370;
+const BET_CIRCLE_RADIUS = 32;
+
+/** Standard casino chip colours keyed by denomination */
+const CHIP_COLORS = [
+  { min: 100, fill: '#1a1a2e', stroke: '#e0e0e0', label: '#ffffff' },
+  { min: 50,  fill: '#e67e22', stroke: '#f5c06d', label: '#ffffff' },
+  { min: 25,  fill: '#27ae60', stroke: '#6dd5a0', label: '#ffffff' },
+  { min: 10,  fill: '#2980b9', stroke: '#6db8e0', label: '#ffffff' },
+  { min: 0,   fill: '#c0392b', stroke: '#e88a84', label: '#ffffff' },
+];
+
 /**
  * TableScene manages the visual layout of the blackjack table on a PixiJS stage.
  * It holds dealer and player hand containers and provides methods to sync
@@ -77,11 +91,72 @@ export class TableScene {
     this.discardLabel.y = PLAYER_Y + 20 + STACK_CARD_HEIGHT + 8;
     this.root.addChild(this.discardLabel);
 
+    // Betting spot
+    this.betContainer = new Container();
+    this.betContainer.x = BET_CIRCLE_X;
+    this.betContainer.y = BET_CIRCLE_Y;
+    this.root.addChild(this.betContainer);
+
+    this._currentBet = 0;
+    this._drawBetSpot(0);
+
     /** Track what's currently rendered to diff against new state */
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
     this._shoeSize = 0;
     this._discardCount = 0;
     this._totalCards = 0;
+  }
+
+  /**
+   * Draw the betting spot: an empty circle when no bet, a chip stack when active.
+   * @param {number} amount
+   */
+  _drawBetSpot(amount) {
+    this.betContainer.removeChildren();
+
+    const g = new Graphics();
+
+    if (amount <= 0) {
+      // Empty betting circle
+      g.circle(0, 0, BET_CIRCLE_RADIUS);
+      g.stroke({ color: 'rgba(255,255,255,0.3)', width: 2 });
+      // "BET" hint text
+      const hint = new Text({
+        text: 'BET',
+        style: { fill: 'rgba(255,255,255,0.25)', fontSize: 13, fontFamily: 'sans-serif', fontWeight: 'bold' },
+      });
+      hint.anchor = { x: 0.5, y: 0.5 };
+      this.betContainer.addChild(g, hint);
+      return;
+    }
+
+    // Draw chip(s) for the active bet
+    const chipStyle = CHIP_COLORS.find(c => amount >= c.min) || CHIP_COLORS[CHIP_COLORS.length - 1];
+
+    // Outer circle (chip edge)
+    g.circle(0, 0, BET_CIRCLE_RADIUS);
+    g.fill(chipStyle.fill);
+    g.circle(0, 0, BET_CIRCLE_RADIUS);
+    g.stroke({ color: chipStyle.stroke, width: 3 });
+
+    // Inner dashed-ring decoration (like a real chip)
+    g.circle(0, 0, BET_CIRCLE_RADIUS - 7);
+    g.stroke({ color: chipStyle.stroke, width: 1 });
+
+    this.betContainer.addChild(g);
+
+    // Bet amount label on the chip
+    const label = new Text({
+      text: `$${amount}`,
+      style: {
+        fill: chipStyle.label,
+        fontSize: amount >= 1000 ? 12 : 14,
+        fontFamily: 'sans-serif',
+        fontWeight: 'bold',
+      },
+    });
+    label.anchor = { x: 0.5, y: 0.5 };
+    this.betContainer.addChild(label);
   }
 
   _drawFelt() {
@@ -96,6 +171,9 @@ export class TableScene {
     g.moveTo(40, midY);
     g.lineTo(this.app.screen.width - 40, midY);
     g.stroke({ color: 'rgba(255,255,255,0.15)', width: 1 });
+    // Betting circle outline on the felt
+    g.circle(BET_CIRCLE_X, BET_CIRCLE_Y, BET_CIRCLE_RADIUS + 4);
+    g.stroke({ color: 'rgba(255,255,255,0.12)', width: 1.5 });
     this.root.addChildAt(g, 0);
   }
 
@@ -209,6 +287,13 @@ export class TableScene {
       phase,
     };
 
+    // Update betting spot
+    const bet = gameState.currentBet || 0;
+    if (bet !== this._currentBet) {
+      this._currentBet = bet;
+      this._drawBetSpot(bet);
+    }
+
     // Update shoe and discard pile (counts visible cards including hidden placeholder)
     const cardsOnTable = dealerHand.cards.length + playerHand.cards.length +
       (showDealerHidden ? 1 : 0);
@@ -288,6 +373,8 @@ export class TableScene {
     this.dealerCards.removeChildren();
     this.playerCards.removeChildren();
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
+    this._currentBet = 0;
+    this._drawBetSpot(0);
 
     if (shoeSize != null) {
       this._updateStacks(shoeSize, 0);
