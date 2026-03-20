@@ -282,3 +282,19 @@
   font-family: monospace;
   font-size: 0.85rem;
 }
+
+.logout-btn {
+  width: 100%;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: bold;
+  background: rgba(244, 67, 54, 0.25);
+  color: #ff8a80;
+  border: 1px solid rgba(244, 67, 54, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: rgba(244, 67, 54, 0.4);
+}

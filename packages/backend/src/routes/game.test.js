@@ -3,12 +3,19 @@ import request from 'supertest';
 import { app } from '../app.js';
 import { PHASES, ACTIONS, OUTCOMES, DEFAULT_BALANCE } from '@blackjack/shared';
 
-/** Create a supertest agent that persists cookies across requests. */
-const agent = () => request.agent(app);
+let testUserCounter = 0;
 
-/** Helper: create session + place bet, return the agent and bet response. */
+/** Create a supertest agent that persists cookies across requests and is logged in. */
+async function loggedInAgent() {
+  const client = request.agent(app);
+  testUserCounter++;
+  await client.post('/api/login').send({ username: `player${testUserCounter}` });
+  return client;
+}
+
+/** Helper: login + create session + place bet, return the agent and bet response. */
 async function setupRound(betAmount = 100) {
-  const client = agent();
+  const client = await loggedInAgent();
   await client.post('/api/session');
   const res = await client.post('/api/bet').send({ amount: betAmount });
   return { client, betRes: res };
@@ -67,7 +74,7 @@ describe('POST /api/bet', () => {
   });
 
   it('rejects zero bet', async () => {
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
     const res = await client.post('/api/bet').send({ amount: 0 });
 
@@ -76,7 +83,7 @@ describe('POST /api/bet', () => {
   });
 
   it('rejects negative bet', async () => {
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
     const res = await client.post('/api/bet').send({ amount: -50 });
 
@@ -84,7 +91,7 @@ describe('POST /api/bet', () => {
   });
 
   it('rejects bet exceeding balance', async () => {
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
     const res = await client.post('/api/bet').send({ amount: DEFAULT_BALANCE + 1 });
 
@@ -92,9 +99,9 @@ describe('POST /api/bet', () => {
     expect(res.body.error).toMatch(/invalid bet/i);
   });
 
-  it('rejects bet without a session', async () => {
-    const res = await agent().post('/api/bet').send({ amount: 100 });
-    expect(res.status).toBe(404);
+  it('rejects bet without login', async () => {
+    const res = await request.agent(app).post('/api/bet').send({ amount: 100 });
+    expect(res.status).toBe(401);
   });
 });
 
@@ -122,7 +129,7 @@ describe('POST /api/action', () => {
   });
 
   it('rejects action outside of player turn', async () => {
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
     // Still in betting phase
     const res = await client.post('/api/action').send({ action: ACTIONS.HIT });
@@ -139,9 +146,9 @@ describe('POST /api/action', () => {
     expect(res.body.error).toMatch(/invalid action/i);
   });
 
-  it('rejects action without a session', async () => {
-    const res = await agent().post('/api/action').send({ action: ACTIONS.HIT });
-    expect(res.status).toBe(404);
+  it('rejects action without login', async () => {
+    const res = await request.agent(app).post('/api/action').send({ action: ACTIONS.HIT });
+    expect(res.status).toBe(401);
   });
 });
 
@@ -175,7 +182,7 @@ describe('POST /api/action — double', () => {
 
   it('double not offered when balance insufficient', async () => {
     // Bet the full balance so there's nothing left to double
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
     const betRes = await client.post('/api/bet').send({ amount: DEFAULT_BALANCE });
 
@@ -213,7 +220,7 @@ describe('POST /api/new-round', () => {
   });
 
   it('rejects new round when not in resolved phase', async () => {
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
     // Still in betting phase
     const res = await client.post('/api/new-round');
@@ -221,15 +228,15 @@ describe('POST /api/new-round', () => {
     expect(res.body.error).toMatch(/resolution/i);
   });
 
-  it('rejects new round without a session', async () => {
-    const res = await agent().post('/api/new-round');
-    expect(res.status).toBe(404);
+  it('rejects new round without login', async () => {
+    const res = await request.agent(app).post('/api/new-round');
+    expect(res.status).toBe(401);
   });
 });
 
 describe('full round lifecycle', () => {
-  it('plays a complete round: create → bet → stand → new-round', async () => {
-    const client = agent();
+  it('plays a complete round: login → create → bet → stand → new-round', async () => {
+    const client = await loggedInAgent();
 
     // 1. Create session
     const sessionRes = await client.post('/api/session');
@@ -264,7 +271,7 @@ describe('full round lifecycle', () => {
   });
 
   it('plays multiple rounds and balance changes persist', async () => {
-    const client = agent();
+    const client = await loggedInAgent();
     await client.post('/api/session');
 
     for (let round = 0; round < 3; round++) {
@@ -286,8 +293,8 @@ describe('full round lifecycle', () => {
     expect(typeof stateRes.body.balance).toBe('number');
   });
 
-  it('plays a round with hits: create → bet → hit → hit → stand → new-round', async () => {
-    const client = agent();
+  it('plays a round with hits: login → bet → hit → hit → stand → new-round', async () => {
+    const client = await loggedInAgent();
     await client.post('/api/session');
 
     const betRes = await client.post('/api/bet').send({ amount: 25 });
@@ -314,6 +321,31 @@ describe('full round lifecycle', () => {
     // Can start a new round
     const newRoundRes = await client.post('/api/new-round');
     expect(newRoundRes.body.phase).toBe(PHASES.BETTING);
+  });
+});
+
+describe('balance sync to user store', () => {
+  it('balance persists to user store after bet resolves', async () => {
+    const { client, betRes } = await setupRound(100);
+    if (betRes.body.phase !== PHASES.PLAYER_TURN) return;
+
+    const standRes = await client.post('/api/action').send({ action: ACTIONS.STAND });
+    const gameBalance = standRes.body.balance;
+
+    // /api/me should reflect the same balance
+    const meRes = await client.get('/api/me');
+    expect(meRes.body.balance).toBe(gameBalance);
+  });
+
+  it('balance persists after new-round', async () => {
+    const { client, betRes } = await setupRound(50);
+    if (betRes.body.phase !== PHASES.PLAYER_TURN) return;
+
+    await client.post('/api/action').send({ action: ACTIONS.STAND });
+    const newRoundRes = await client.post('/api/new-round');
+
+    const meRes = await client.get('/api/me');
+    expect(meRes.body.balance).toBe(newRoundRes.body.balance);
   });
 });
 

@@ -14,6 +14,18 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+export function login(username) {
+  return request('/login', { method: 'POST', body: JSON.stringify({ username }) });
+}
+
+export function getMe() {
+  return request('/me');
+}
+
+export function logout() {
+  return request('/logout', { method: 'POST' });
+}
+
 export function createSession() {
   return request('/session', { method: 'POST' });
 }

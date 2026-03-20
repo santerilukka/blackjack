@@ -6,7 +6,7 @@ import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
 import PixiCanvas from '../pixi/PixiCanvas.jsx';
 
-export default function GamePage() {
+export default function GamePage({ user, onLogout }) {
   const {
     gameState,
     loading,
@@ -101,6 +101,8 @@ export default function GamePage() {
         onClose={() => setMenuOpen(false)}
         balance={balance}
         phase={phase}
+        username={user?.username}
+        onLogout={onLogout}
       />
 
       <StatusBar balance={balance} currentBet={currentBet} message={message} phase={phase} />

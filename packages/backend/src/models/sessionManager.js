@@ -13,11 +13,15 @@ const discards = new Map();
 
 /**
  * Create a new game session.
+ * @param {number} [initialBalance] - Override the default starting balance (e.g. from user store).
  * @returns {{ state: import('@blackjack/shared').GameState, shoe: object[], discard: object[] }}
  */
-export function createSession() {
+export function createSession(initialBalance) {
   const sessionId = crypto.randomUUID();
   const state = createDefaultGameState(sessionId);
+  if (initialBalance !== undefined) {
+    state.balance = initialBalance;
+  }
   const shoe = createShoe();
   const discard = [];
   sessions.set(sessionId, state);

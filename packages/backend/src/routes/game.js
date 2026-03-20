@@ -1,10 +1,21 @@
 import { Router } from 'express';
 import { sessionGuard } from '../middleware/sessionGuard.js';
 import { getShoe, getDiscard, updateSession } from '../models/sessionManager.js';
+import { updateBalance } from '../models/userManager.js';
 import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
 import { placeBet } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
 import { startNewRound } from '../engine/round.js';
+
+/**
+ * Sync the game state balance back to the user store.
+ */
+function syncBalance(req, state) {
+  const username = req.session?.username;
+  if (username) {
+    updateBalance(username, state.balance);
+  }
+}
 
 const router = Router();
 
@@ -35,6 +46,7 @@ router.post('/bet', sessionGuard, (req, res) => {
 
   const newState = placeBet(state, shoe, discard, amount);
   updateSession(req.gameSessionId, newState);
+  syncBalance(req, newState);
   res.json(newState);
 });
 
@@ -61,6 +73,7 @@ router.post('/action', sessionGuard, (req, res) => {
   const discard = getDiscard(req.gameSessionId);
   const newState = executeAction(state, shoe, discard, action);
   updateSession(req.gameSessionId, newState);
+  syncBalance(req, newState);
   res.json(newState);
 });
 
@@ -78,6 +91,7 @@ router.post('/new-round', sessionGuard, (req, res) => {
   const discard = getDiscard(req.gameSessionId);
   const newState = startNewRound(state, shoe, discard);
   updateSession(req.gameSessionId, newState);
+  syncBalance(req, newState);
   res.json(newState);
 });
 

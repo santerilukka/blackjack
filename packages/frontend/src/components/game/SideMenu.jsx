@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { logout } from '../../services/api.js';
 
-export default function SideMenu({ open, onClose, balance, phase }) {
+export default function SideMenu({ open, onClose, balance, phase, username, onLogout }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function SideMenu({ open, onClose, balance, phase }) {
 
         <section className="side-menu-section">
           <h3>Player Info</h3>
+          {username && <p>Player: <strong>{username}</strong></p>}
           <p>Balance: <strong>${balance}</strong></p>
           <p>Phase: <strong>{phase}</strong></p>
         </section>
@@ -72,6 +74,20 @@ export default function SideMenu({ open, onClose, balance, phase }) {
             </tbody>
           </table>
         </section>
+
+        {onLogout && (
+          <section className="side-menu-section">
+            <button
+              className="logout-btn"
+              onClick={async () => {
+                try { await logout(); } catch {}
+                onLogout();
+              }}
+            >
+              Log Out
+            </button>
+          </section>
+        )}
       </nav>
     </>
   );

@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
+import { authRoutes } from './routes/auth.js';
 import { sessionRoutes } from './routes/session.js';
 import { gameRoutes } from './routes/game.js';
+import { authGuard } from './middleware/authGuard.js';
 
 const app = express();
 
@@ -24,7 +26,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api', sessionRoutes);
-app.use('/api', gameRoutes);
+app.use('/api', authRoutes);
+app.use('/api', authGuard, sessionRoutes);
+app.use('/api', authGuard, gameRoutes);
 
 export { app };
