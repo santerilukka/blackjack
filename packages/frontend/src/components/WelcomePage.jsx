@@ -48,7 +48,7 @@ export default function WelcomePage({ onLogin }) {
           disabled={loading}
         />
         <button className="play-btn" type="submit" disabled={loading || !username.trim()}>
-          {loading ? 'Joining...' : 'Play'}
+          {loading ? 'Joining...' : <>Play <kbd>Enter</kbd></>}
         </button>
         {error && <p className="login-error">{error}</p>}
       </form>

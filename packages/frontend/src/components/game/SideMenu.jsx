@@ -10,6 +10,11 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
     }
   }, [open]);
 
+  function handleLogout() {
+    logout().catch(() => {});
+    onLogout();
+  }
+
   return (
     <>
       <div
@@ -23,6 +28,10 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
         aria-label="Game menu"
         onKeyDown={(e) => {
           if (e.key === 'Escape') onClose();
+          if (e.key.toLowerCase() === 'l' && onLogout) {
+            e.preventDefault();
+            handleLogout();
+          }
         }}
       >
         <button className="side-menu-close" onClick={onClose} aria-label="Close menu">
@@ -71,20 +80,16 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
               <tr><td><kbd>D</kbd></td><td>Double</td></tr>
               <tr><td><kbd>N</kbd></td><td>New round</td></tr>
               <tr><td><kbd>M</kbd></td><td>Toggle menu</td></tr>
+              <tr><td><kbd>Esc</kbd></td><td>Close menu</td></tr>
+              <tr><td><kbd>L</kbd></td><td>Log out (in menu)</td></tr>
             </tbody>
           </table>
         </section>
 
         {onLogout && (
           <section className="side-menu-section">
-            <button
-              className="logout-btn"
-              onClick={async () => {
-                try { await logout(); } catch {}
-                onLogout();
-              }}
-            >
-              Log Out
+            <button className="logout-btn" onClick={handleLogout}>
+              Log Out <kbd>L</kbd>
             </button>
           </section>
         )}

@@ -298,3 +298,21 @@
 .logout-btn:hover {
   background: rgba(244, 67, 54, 0.4);
 }
+
+/* Keyboard hint badges inside buttons */
+button kbd, .play-btn kbd {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  padding: 0.05rem 0.35rem;
+  font-family: monospace;
+  font-size: 0.75em;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+.logout-btn kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 130, 120, 0.3);
+}

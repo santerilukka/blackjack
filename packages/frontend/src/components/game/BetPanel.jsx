@@ -23,7 +23,7 @@ export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlac
         ))}
       </div>
       <button className="deal-btn" onClick={handleBet} disabled={disabled || betAmount <= 0}>
-        Deal (${betAmount})
+        Deal (${betAmount}) <kbd>B</kbd>
       </button>
     </div>
   );

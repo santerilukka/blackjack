@@ -133,7 +133,7 @@ export default function GamePage({ user, onLogout }) {
 
       {isResolved && (
         <button className="new-round-btn" onClick={newRound} disabled={loading}>
-          New Round (N)
+          New Round <kbd>N</kbd>
         </button>
       )}
     </div>
