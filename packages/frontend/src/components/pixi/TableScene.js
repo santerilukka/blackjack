@@ -51,10 +51,20 @@ export class TableScene {
     this.dealerLabel.y = DEALER_Y + LABEL_OFFSET_Y;
     this.root.addChild(this.dealerLabel);
 
+    this.dealerTotal = new Text({ text: '', style: { fill: '#ffd700', fontSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' } });
+    this.dealerTotal.x = 100;
+    this.dealerTotal.y = DEALER_Y + LABEL_OFFSET_Y;
+    this.root.addChild(this.dealerTotal);
+
     this.playerLabel = new Text({ text: 'Player', style: { fill: '#ffffff', fontSize: 18, fontFamily: 'sans-serif' } });
     this.playerLabel.x = 20;
     this.playerLabel.y = PLAYER_Y + LABEL_OFFSET_Y;
     this.root.addChild(this.playerLabel);
+
+    this.playerTotal = new Text({ text: '', style: { fill: '#ffd700', fontSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' } });
+    this.playerTotal.x = 100;
+    this.playerTotal.y = PLAYER_Y + LABEL_OFFSET_Y;
+    this.root.addChild(this.playerTotal);
 
     // Card containers
     this.dealerCards = new Container();
@@ -287,6 +297,9 @@ export class TableScene {
       phase,
     };
 
+    // Update hand totals
+    this._updateTotals(gameState);
+
     // Update betting spot
     const bet = gameState.currentBet || 0;
     if (bet !== this._currentBet) {
@@ -298,6 +311,39 @@ export class TableScene {
     const cardsOnTable = dealerHand.cards.length + playerHand.cards.length +
       (showDealerHidden ? 1 : 0);
     this._updateStacks(gameState.shoeSize, cardsOnTable);
+  }
+
+  /**
+   * Update the hand total displays.
+   * @param {object} gameState
+   */
+  _updateTotals(gameState) {
+    const { dealerHand, playerHand, phase } = gameState;
+
+    // Player total
+    if (playerHand.cards.length > 0) {
+      const pLabel = playerHand.blackjack ? 'BJ' :
+        playerHand.busted ? `${playerHand.total} BUST` :
+        playerHand.soft ? `${playerHand.total} (soft)` :
+        String(playerHand.total);
+      this.playerTotal.text = pLabel;
+    } else {
+      this.playerTotal.text = '';
+    }
+
+    // Dealer total — hide during playerTurn (hidden card)
+    if (dealerHand.cards.length > 0 && phase !== 'playerTurn') {
+      const dLabel = dealerHand.blackjack ? 'BJ' :
+        dealerHand.busted ? `${dealerHand.total} BUST` :
+        dealerHand.soft ? `${dealerHand.total} (soft)` :
+        String(dealerHand.total);
+      this.dealerTotal.text = dLabel;
+    } else if (phase === 'playerTurn' && dealerHand.cards.length > 0) {
+      // Show only the face-up card value
+      this.dealerTotal.text = String(dealerHand.total);
+    } else {
+      this.dealerTotal.text = '';
+    }
   }
 
   /**
@@ -375,6 +421,8 @@ export class TableScene {
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
     this._currentBet = 0;
     this._drawBetSpot(0);
+    this.dealerTotal.text = '';
+    this.playerTotal.text = '';
 
     if (shoeSize != null) {
       this._updateStacks(shoeSize, 0);
