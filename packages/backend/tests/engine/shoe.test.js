@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createShoe, shuffle, drawCard, needsReshuffle } from './shoe.js';
+import { createShoe, shuffle, drawCard, needsReshuffle } from '../../src/engine/shoe.js';
 import { NUM_DECKS, RESHUFFLE_THRESHOLD } from '@blackjack/shared';
 
 describe('createShoe', () => {

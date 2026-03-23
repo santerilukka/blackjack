@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { playDealerTurn } from './dealer.js';
+import { playDealerTurn } from '../../src/engine/dealer.js';
 
 const card = (rank, suit = 'hearts') => ({ rank, suit });
 

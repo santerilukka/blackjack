@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import { app } from '../app.js';
-import { clearUsers } from '../models/userManager.js';
+import { app } from '../../src/app.js';
+import { clearUsers } from '../../src/models/userManager.js';
 import { DEFAULT_BALANCE } from '@blackjack/shared';
 
 const agent = () => request.agent(app);

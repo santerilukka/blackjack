@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { executeAction } from './actions.js';
-import { placeBet } from './round.js';
+import { executeAction } from '../../src/engine/actions.js';
+import { placeBet } from '../../src/engine/round.js';
 import { ACTIONS, PHASES, OUTCOMES, createDefaultGameState, createRules } from '@blackjack/shared';
 
 const card = (rank, suit = 'hearts') => ({ rank, suit });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { executeAction } from './actions.js';
+import { executeAction } from '../../src/engine/actions.js';
 import { ACTIONS, PHASES, OUTCOMES } from '@blackjack/shared';
 
 const card = (rank, suit = 'hearts') => ({ rank, suit });

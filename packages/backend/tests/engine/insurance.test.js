@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { placeBet, resolveInsurance } from './round.js';
+import { placeBet, resolveInsurance } from '../../src/engine/round.js';
 import { PHASES, ACTIONS, OUTCOMES, DEFAULT_BALANCE, createDefaultGameState, createRules } from '@blackjack/shared';
 
 const card = (rank, suit = 'hearts') => ({ rank, suit });
@@ -54,7 +54,7 @@ describe('insurance — dealer shows Ace', () => {
 
 describe('resolveInsurance — accept insurance, dealer has blackjack', () => {
   function makeInsuranceState(playerCards, dealerFaceUp, dealerHidden, bet = 100) {
-    const { evaluateHand } = require('./evaluator.js');
+    const { evaluateHand } = require('../../src/engine/evaluator.js');
     const playerHand = evaluateHand(playerCards);
     return {
       ...createDefaultGameState('test'),
@@ -129,7 +129,7 @@ describe('resolveInsurance — accept insurance, dealer has blackjack', () => {
 
 describe('resolveInsurance — dealer does NOT have blackjack', () => {
   function makeInsuranceState(playerCards, dealerFaceUp, dealerHidden, bet = 100) {
-    const { evaluateHand } = require('./evaluator.js');
+    const { evaluateHand } = require('../../src/engine/evaluator.js');
     const playerHand = evaluateHand(playerCards);
     return {
       ...createDefaultGameState('test'),

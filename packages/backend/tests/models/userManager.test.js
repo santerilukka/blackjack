@@ -7,7 +7,7 @@ import {
   updateBalance,
   getBalance,
   clearUsers,
-} from './userManager.js';
+} from '../../src/models/userManager.js';
 import { DEFAULT_BALANCE } from '@blackjack/shared';
 
 beforeEach(() => {

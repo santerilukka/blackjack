@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { placeBet, startNewRound } from './round.js';
+import { placeBet, startNewRound } from '../../src/engine/round.js';
 import { PHASES, ACTIONS, OUTCOMES, DEFAULT_BALANCE } from '@blackjack/shared';
 import { createDefaultGameState } from '@blackjack/shared';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-import { app } from '../app.js';
+import { app } from '../../src/app.js';
 import { PHASES, ACTIONS, DEFAULT_BALANCE } from '@blackjack/shared';
 
 let testUserCounter = 0;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRound } from './resolver.js';
+import { resolveRound } from '../../src/engine/resolver.js';
 import { OUTCOMES } from '@blackjack/shared';
 
 /** Helper to build a hand object */

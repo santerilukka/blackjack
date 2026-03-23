@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_RULES, createRules } from '@blackjack/shared';
-import { playDealerTurn, dealerShouldHit } from './dealer.js';
-import { resolveRound } from './resolver.js';
-import { placeBet } from './round.js';
-import { executeAction } from './actions.js';
-import { evaluateHand } from './evaluator.js';
+import { playDealerTurn, dealerShouldHit } from '../../src/engine/dealer.js';
+import { resolveRound } from '../../src/engine/resolver.js';
+import { placeBet } from '../../src/engine/round.js';
+import { executeAction } from '../../src/engine/actions.js';
+import { evaluateHand } from '../../src/engine/evaluator.js';
 import { ACTIONS, PHASES, OUTCOMES, createDefaultGameState } from '@blackjack/shared';
 
 const card = (rank, suit = 'hearts') => ({ rank, suit });
