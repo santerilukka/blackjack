@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
+import { PHASES } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
+import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
 import StatusBar from './StatusBar.jsx';
-import BetPanel, { CHIP_VALUES } from './BetPanel.jsx';
+import BetPanel from './BetPanel.jsx';
 import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
 import PixiCanvas from '../pixi/PixiCanvas.jsx';
@@ -38,42 +40,24 @@ export default function GamePage({ user, onLogout }) {
 
     function handleKeyDown(e) {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      const key = e.key.toLowerCase();
 
-      if (key === 'm') {
-        e.preventDefault();
-        toggleMenu();
-        return;
-      }
+      const action = resolveKeyAction(
+        e.key.toLowerCase(),
+        gameState.phase,
+        gameState.availableActions,
+      );
 
-      const { phase, availableActions } = gameState;
+      if (!action) return;
+      e.preventDefault();
 
-      if (phase === 'betting') {
-        const chipIndex = parseInt(e.key, 10) - 1;
-        if (chipIndex >= 0 && chipIndex < CHIP_VALUES.length) {
-          e.preventDefault();
-          setBetAmount(CHIP_VALUES[chipIndex]);
-          return;
-        }
-        if (key === 'b' || key === 'enter') {
-          e.preventDefault();
-          doBet();
-          return;
-        }
-      }
-
-      if (key === 'h' && phase === 'playerTurn' && availableActions.includes('hit')) {
-        e.preventDefault();
-        hit();
-      } else if (key === 's' && phase === 'playerTurn' && availableActions.includes('stand')) {
-        e.preventDefault();
-        stand();
-      } else if (key === 'd' && phase === 'playerTurn' && availableActions.includes('double')) {
-        e.preventDefault();
-        double();
-      } else if (key === 'n' && phase === 'resolved') {
-        e.preventDefault();
-        newRound();
+      switch (action.type) {
+        case 'toggleMenu': toggleMenu(); break;
+        case 'selectChip': setBetAmount(action.payload); break;
+        case 'placeBet': doBet(); break;
+        case 'hit': hit(); break;
+        case 'stand': stand(); break;
+        case 'double': double(); break;
+        case 'newRound': newRound(); break;
       }
     }
 
@@ -86,9 +70,9 @@ export default function GamePage({ user, onLogout }) {
   }
 
   const { phase, balance, currentBet, message } = gameState;
-  const isBetting = phase === 'betting';
-  const isPlayerTurn = phase === 'playerTurn';
-  const isResolved = phase === 'resolved';
+  const isBetting = phase === PHASES.BETTING;
+  const isPlayerTurn = phase === PHASES.PLAYER_TURN;
+  const isResolved = phase === PHASES.RESOLVED;
 
   return (
     <div className="game-page">
@@ -111,31 +95,40 @@ export default function GamePage({ user, onLogout }) {
 
       <PixiCanvas gameState={gameState} />
 
-      {isBetting && (
+      <div
+        className="bet-panel-wrapper"
+        style={{ opacity: isBetting ? 1 : 0.3, pointerEvents: isBetting ? 'auto' : 'none' }}
+      >
         <BetPanel
           balance={balance}
           betAmount={betAmount}
           onBetAmountChange={setBetAmount}
           onPlaceBet={placeBet}
-          disabled={loading}
+          disabled={loading || !isBetting}
         />
-      )}
+      </div>
 
-      {isPlayerTurn && (
+      <div
+        className="action-bar-wrapper"
+        style={{ opacity: isPlayerTurn ? 1 : 0.3, pointerEvents: isPlayerTurn ? 'auto' : 'none' }}
+      >
         <ActionBar
           onHit={hit}
           onStand={stand}
           onDouble={double}
-          disabled={loading}
+          disabled={loading || !isPlayerTurn}
           availableActions={gameState.availableActions}
         />
-      )}
+      </div>
 
-      {isResolved && (
-        <button className="new-round-btn" onClick={newRound} disabled={loading}>
+      <div
+        className="new-round-wrapper"
+        style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
+      >
+        <button className="new-round-btn" onClick={newRound} disabled={loading || !isResolved}>
           New Round <kbd>N</kbd>
         </button>
-      )}
+      </div>
     </div>
   );
 }

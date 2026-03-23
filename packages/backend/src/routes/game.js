@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { sessionGuard } from '../middleware/sessionGuard.js';
-import { getShoe, getDiscard, updateSession } from '../models/sessionManager.js';
+import { updateSession } from '../models/sessionManager.js';
 import { updateBalance } from '../models/userManager.js';
 import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
 import { placeBet } from '../engine/round.js';
@@ -24,9 +24,7 @@ const router = Router();
  */
 router.post('/bet', sessionGuard, (req, res) => {
   const { amount } = req.body;
-  const state = req.gameState;
-  const shoe = getShoe(req.gameSessionId);
-  const discard = getDiscard(req.gameSessionId);
+  const { gameState: state, shoe, discard, gameSessionId } = req;
 
   if (state.phase !== PHASES.BETTING) {
     return res.status(400).json({ error: 'Cannot place bet outside of betting phase.' });
@@ -45,7 +43,7 @@ router.post('/bet', sessionGuard, (req, res) => {
   }
 
   const newState = placeBet(state, shoe, discard, amount);
-  updateSession(req.gameSessionId, newState);
+  updateSession(gameSessionId, newState);
   syncBalance(req, newState);
   res.json(newState);
 });
@@ -55,8 +53,7 @@ router.post('/bet', sessionGuard, (req, res) => {
  */
 router.post('/action', sessionGuard, (req, res) => {
   const { action } = req.body;
-  const state = req.gameState;
-  const shoe = getShoe(req.gameSessionId);
+  const { gameState: state, shoe, discard, gameSessionId } = req;
 
   if (state.phase !== PHASES.PLAYER_TURN) {
     return res.status(400).json({ error: 'Cannot perform action outside of player turn.' });
@@ -70,9 +67,8 @@ router.post('/action', sessionGuard, (req, res) => {
     return res.status(400).json({ error: `Action not available: ${action}` });
   }
 
-  const discard = getDiscard(req.gameSessionId);
   const newState = executeAction(state, shoe, discard, action);
-  updateSession(req.gameSessionId, newState);
+  updateSession(gameSessionId, newState);
   syncBalance(req, newState);
   res.json(newState);
 });
@@ -81,16 +77,14 @@ router.post('/action', sessionGuard, (req, res) => {
  * POST /api/new-round — Start a new round after resolution.
  */
 router.post('/new-round', sessionGuard, (req, res) => {
-  const state = req.gameState;
-  const shoe = getShoe(req.gameSessionId);
+  const { gameState: state, shoe, discard, gameSessionId } = req;
 
   if (state.phase !== PHASES.RESOLVED) {
     return res.status(400).json({ error: 'Can only start a new round after resolution.' });
   }
 
-  const discard = getDiscard(req.gameSessionId);
   const newState = startNewRound(state, shoe, discard);
-  updateSession(req.gameSessionId, newState);
+  updateSession(gameSessionId, newState);
   syncBalance(req, newState);
   res.json(newState);
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { PHASES } from '@blackjack/shared';
 import { usePixiApp } from '../../hooks/usePixiApp.js';
 import { TableScene } from './TableScene.js';
 
@@ -30,7 +31,7 @@ export default function PixiCanvas({ gameState, width = 800, height = 500 }) {
     if (!sceneRef.current || !gameState) return;
 
     // Clear the scene when returning to betting phase (new round)
-    if (gameState.phase === 'betting' && gameState.playerHand.cards.length === 0) {
+    if (gameState.phase === PHASES.BETTING && gameState.playerHand.cards.length === 0) {
       sceneRef.current.clear(gameState.shoeSize);
       return;
     }

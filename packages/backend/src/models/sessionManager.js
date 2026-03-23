@@ -2,19 +2,20 @@ import crypto from 'node:crypto';
 import { createDefaultGameState } from '@blackjack/shared';
 import { createShoe } from '../engine/shoe.js';
 
-/** @type {Map<string, import('@blackjack/shared').GameState>} */
+/**
+ * @typedef {Object} Session
+ * @property {import('@blackjack/shared').GameState} state
+ * @property {object[]} shoe
+ * @property {object[]} discard
+ */
+
+/** @type {Map<string, Session>} */
 const sessions = new Map();
-
-/** @type {Map<string, object[]>} */
-const shoes = new Map();
-
-/** @type {Map<string, object[]>} */
-const discards = new Map();
 
 /**
  * Create a new game session.
  * @param {number} [initialBalance] - Override the default starting balance (e.g. from user store).
- * @returns {{ state: import('@blackjack/shared').GameState, shoe: object[], discard: object[] }}
+ * @returns {Session}
  */
 export function createSession(initialBalance) {
   const sessionId = crypto.randomUUID();
@@ -24,37 +25,18 @@ export function createSession(initialBalance) {
   }
   const shoe = createShoe();
   const discard = [];
-  sessions.set(sessionId, state);
-  shoes.set(sessionId, shoe);
-  discards.set(sessionId, discard);
-  return { state, shoe, discard };
+  const session = { state, shoe, discard };
+  sessions.set(sessionId, session);
+  return session;
 }
 
 /**
- * Get game state by session ID.
+ * Get a full session by session ID.
  * @param {string} sessionId
- * @returns {import('@blackjack/shared').GameState | undefined}
+ * @returns {Session | undefined}
  */
 export function getSession(sessionId) {
   return sessions.get(sessionId);
-}
-
-/**
- * Get shoe by session ID.
- * @param {string} sessionId
- * @returns {object[] | undefined}
- */
-export function getShoe(sessionId) {
-  return shoes.get(sessionId);
-}
-
-/**
- * Get discard pile by session ID.
- * @param {string} sessionId
- * @returns {object[] | undefined}
- */
-export function getDiscard(sessionId) {
-  return discards.get(sessionId);
 }
 
 /**
@@ -63,7 +45,10 @@ export function getDiscard(sessionId) {
  * @param {import('@blackjack/shared').GameState} state
  */
 export function updateSession(sessionId, state) {
-  sessions.set(sessionId, state);
+  const session = sessions.get(sessionId);
+  if (session) {
+    session.state = state;
+  }
 }
 
 /**
@@ -72,6 +57,4 @@ export function updateSession(sessionId, state) {
  */
 export function deleteSession(sessionId) {
   sessions.delete(sessionId);
-  shoes.delete(sessionId);
-  discards.delete(sessionId);
 }

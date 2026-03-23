@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { ACTIONS } from '@blackjack/shared';
 import * as api from '../services/api.js';
 
 export function useGameState() {
@@ -22,9 +23,9 @@ export function useGameState() {
   const startSession = useCallback(wrapAsync(api.createSession), [wrapAsync]);
   const refreshState = useCallback(wrapAsync(api.getSessionState), [wrapAsync]);
   const placeBet = useCallback(wrapAsync(api.placeBet), [wrapAsync]);
-  const hit = useCallback(wrapAsync(() => api.playerAction('hit')), [wrapAsync]);
-  const stand = useCallback(wrapAsync(() => api.playerAction('stand')), [wrapAsync]);
-  const double = useCallback(wrapAsync(() => api.playerAction('double')), [wrapAsync]);
+  const hit = useCallback(wrapAsync(() => api.playerAction(ACTIONS.HIT)), [wrapAsync]);
+  const stand = useCallback(wrapAsync(() => api.playerAction(ACTIONS.STAND)), [wrapAsync]);
+  const double = useCallback(wrapAsync(() => api.playerAction(ACTIONS.DOUBLE)), [wrapAsync]);
   const newRound = useCallback(wrapAsync(api.newRound), [wrapAsync]);
 
   return {

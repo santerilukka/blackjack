@@ -1,4 +1,5 @@
-const CHIP_VALUES = [5, 10, 25, 50, 100];
+import { SHORTCUTS } from '@blackjack/shared';
+import { CHIP_VALUES } from '../../hooks/keyboardHandler.js';
 
 export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlaceBet, disabled }) {
   function handleBet() {
@@ -23,10 +24,8 @@ export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlac
         ))}
       </div>
       <button className="deal-btn" onClick={handleBet} disabled={disabled || betAmount <= 0}>
-        Deal (${betAmount}) <kbd>B</kbd>
+        Deal (${betAmount}) <kbd>{SHORTCUTS.BET.label}</kbd>
       </button>
     </div>
   );
 }
-
-export { CHIP_VALUES };

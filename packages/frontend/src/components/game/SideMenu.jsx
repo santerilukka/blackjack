@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from '@blackjack/shared';
 import { logout } from '../../services/api.js';
 
 export default function SideMenu({ open, onClose, balance, phase, username, onLogout }) {
@@ -28,7 +29,7 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
         aria-label="Game menu"
         onKeyDown={(e) => {
           if (e.key === 'Escape') onClose();
-          if (e.key.toLowerCase() === 'l' && onLogout) {
+          if (e.key.toLowerCase() === SHORTCUTS.LOGOUT.key && onLogout) {
             e.preventDefault();
             handleLogout();
           }
@@ -73,15 +74,10 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
           <h3>Keyboard Shortcuts</h3>
           <table className="shortcut-table">
             <tbody>
-              <tr><td><kbd>1</kbd>-<kbd>5</kbd></td><td>Select chip ($5-$100)</td></tr>
-              <tr><td><kbd>B</kbd></td><td>Place bet / deal</td></tr>
-              <tr><td><kbd>H</kbd></td><td>Hit</td></tr>
-              <tr><td><kbd>S</kbd></td><td>Stand</td></tr>
-              <tr><td><kbd>D</kbd></td><td>Double</td></tr>
-              <tr><td><kbd>N</kbd></td><td>New round</td></tr>
-              <tr><td><kbd>M</kbd></td><td>Toggle menu</td></tr>
-              <tr><td><kbd>Esc</kbd></td><td>Close menu</td></tr>
-              <tr><td><kbd>L</kbd></td><td>Log out (in menu)</td></tr>
+              <tr><td><kbd>1</kbd>-<kbd>5</kbd></td><td>{CHIP_SHORTCUT_DESCRIPTION}</td></tr>
+              {Object.values(SHORTCUTS).map(({ label, description }) => (
+                <tr key={label}><td><kbd>{label}</kbd></td><td>{description}</td></tr>
+              ))}
             </tbody>
           </table>
         </section>
@@ -89,7 +85,7 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
         {onLogout && (
           <section className="side-menu-section">
             <button className="logout-btn" onClick={handleLogout}>
-              Log Out <kbd>L</kbd>
+              Log Out <kbd>{SHORTCUTS.LOGOUT.label}</kbd>
             </button>
           </section>
         )}

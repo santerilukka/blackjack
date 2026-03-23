@@ -13,3 +13,5 @@ export {
 } from './constants.js';
 
 export { createDefaultGameState } from './gameState.js';
+
+export { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from './shortcuts.js';

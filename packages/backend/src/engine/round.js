@@ -1,8 +1,8 @@
 import { PHASES, ACTIONS } from '@blackjack/shared';
 import { drawCard } from './shoe.js';
-import { evaluateHand } from './evaluator.js';
-import { cardValue } from './evaluator.js';
+import { evaluateHand, cardValue } from './evaluator.js';
 import { resolveRound } from './resolver.js';
+import { buildResolvedState } from './helpers.js';
 
 /**
  * Place a bet and deal initial cards.
@@ -26,38 +26,34 @@ export function placeBet(state, shoe, discard, amount) {
   const fullDealerHand = evaluateHand([dealerFaceUp, dealerHidden]);
   const dealerVisibleHand = evaluateHand([dealerFaceUp]);
 
+  const allDealerCards = [dealerFaceUp, dealerHidden];
+
   // Check for player blackjack
   if (playerHand.blackjack) {
     const { outcome, payout, message } = resolveRound(playerHand, fullDealerHand, amount);
-    return {
-      ...state,
-      phase: PHASES.RESOLVED,
+    return buildResolvedState(state, {
+      playerHand,
+      dealerCards: allDealerCards,
       balance: balance + payout,
       currentBet: amount,
-      playerHand,
-      dealerHand: { ...fullDealerHand, hiddenCard: null },
       outcome,
       message,
       shoeSize: shoe.length,
-      availableActions: [],
-    };
+    });
   }
 
   // Dealer peek: if face-up card is Ace or 10-value, check for dealer blackjack
   if (cardValue(dealerFaceUp.rank) >= 10 && fullDealerHand.blackjack) {
     const { outcome, payout, message } = resolveRound(playerHand, fullDealerHand, amount);
-    return {
-      ...state,
-      phase: PHASES.RESOLVED,
+    return buildResolvedState(state, {
+      playerHand,
+      dealerCards: allDealerCards,
       balance: balance + payout,
       currentBet: amount,
-      playerHand,
-      dealerHand: { ...fullDealerHand, hiddenCard: null },
       outcome,
       message,
       shoeSize: shoe.length,
-      availableActions: [],
-    };
+    });
   }
 
   const availableActions = [ACTIONS.HIT, ACTIONS.STAND];

@@ -1,4 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import { PHASES } from '@blackjack/shared';
 import { createCardSprite } from './CardSprite.js';
 import { AnimationQueue } from './AnimationQueue.js';
 
@@ -255,7 +256,7 @@ export class TableScene {
     const playerCardKeys = playerHand.cards.map(c => `${c.rank}_${c.suit}`);
 
     // During playerTurn, dealer has a hidden card
-    const showDealerHidden = phase === 'playerTurn';
+    const showDealerHidden = phase === PHASES.PLAYER_TURN;
     if (showDealerHidden) {
       dealerCardKeys.push('hidden');
     }
@@ -332,13 +333,13 @@ export class TableScene {
     }
 
     // Dealer total — hide during playerTurn (hidden card)
-    if (dealerHand.cards.length > 0 && phase !== 'playerTurn') {
+    if (dealerHand.cards.length > 0 && phase !== PHASES.PLAYER_TURN) {
       const dLabel = dealerHand.blackjack ? 'BJ' :
         dealerHand.busted ? `${dealerHand.total} BUST` :
         dealerHand.soft ? `${dealerHand.total} (soft)` :
         String(dealerHand.total);
       this.dealerTotal.text = dLabel;
-    } else if (phase === 'playerTurn' && dealerHand.cards.length > 0) {
+    } else if (phase === PHASES.PLAYER_TURN && dealerHand.cards.length > 0) {
       // Show only the face-up card value
       this.dealerTotal.text = String(dealerHand.total);
     } else {

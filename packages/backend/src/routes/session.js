@@ -15,15 +15,15 @@ router.post('/session', (req, res) => {
   if (existingId) {
     const existing = getSession(existingId);
     if (existing) {
-      return res.json(existing);
+      return res.json(existing.state);
     }
   }
 
   // Load balance from user store so it persists across sessions
   const balance = getBalance(req.session.username);
-  const { state } = createSession(balance);
-  req.session.gameSessionId = state.sessionId;
-  res.status(201).json(state);
+  const session = createSession(balance);
+  req.session.gameSessionId = session.state.sessionId;
+  res.status(201).json(session.state);
 });
 
 /**

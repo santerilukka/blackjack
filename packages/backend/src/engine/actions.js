@@ -1,8 +1,9 @@
-import { ACTIONS, PHASES } from '@blackjack/shared';
+import { ACTIONS } from '@blackjack/shared';
 import { drawCard } from './shoe.js';
 import { evaluateHand } from './evaluator.js';
 import { playDealerTurn } from './dealer.js';
 import { resolveRound } from './resolver.js';
+import { revealDealerCards, buildResolvedState } from './helpers.js';
 
 /**
  * Execute a player action (hit or stand) and return updated game state.
@@ -30,24 +31,17 @@ function executeHit(state, shoe, discard) {
   const playerHand = evaluateHand(newCards);
 
   if (playerHand.busted) {
-    // Reveal dealer hidden card — round is over
-    const revealedDealerCards = [...state.dealerHand.cards];
-    if (state.dealerHand.hiddenCard) {
-      revealedDealerCards.push(state.dealerHand.hiddenCard);
-    }
-    const revealedDealerHand = { ...evaluateHand(revealedDealerCards), hiddenCard: null };
-    const { outcome, payout, message } = resolveRound(playerHand, revealedDealerHand, state.currentBet);
-    return {
-      ...state,
-      phase: PHASES.RESOLVED,
+    const dealerCards = revealDealerCards(state.dealerHand);
+    const { outcome, payout, message } = resolveRound(playerHand, evaluateHand(dealerCards), state.currentBet);
+    return buildResolvedState(state, {
       playerHand,
-      dealerHand: revealedDealerHand,
+      dealerCards,
+      balance: state.balance + payout,
+      currentBet: state.currentBet,
       outcome,
       message,
-      balance: state.balance + payout,
       shoeSize: shoe.length,
-      availableActions: [],
-    };
+    });
   }
 
   return {
@@ -66,68 +60,47 @@ function executeDouble(state, shoe, discard) {
   const playerHand = evaluateHand(newCards);
 
   if (playerHand.busted) {
-    // Reveal dealer hidden card — round is over
-    const revealedDealerCards = [...state.dealerHand.cards];
-    if (state.dealerHand.hiddenCard) {
-      revealedDealerCards.push(state.dealerHand.hiddenCard);
-    }
-    const revealedDealerHand = { ...evaluateHand(revealedDealerCards), hiddenCard: null };
-    const { outcome, payout, message } = resolveRound(playerHand, revealedDealerHand, doubleBet);
-    return {
-      ...state,
-      phase: PHASES.RESOLVED,
+    const dealerCards = revealDealerCards(state.dealerHand);
+    const { outcome, payout, message } = resolveRound(playerHand, evaluateHand(dealerCards), doubleBet);
+    return buildResolvedState(state, {
       playerHand,
-      dealerHand: revealedDealerHand,
-      currentBet: doubleBet,
+      dealerCards,
       balance: newBalance + payout,
+      currentBet: doubleBet,
       outcome,
       message,
       shoeSize: shoe.length,
-      availableActions: [],
-    };
+    });
   }
 
   // Not busted — dealer plays
-  const dealerCards = [...state.dealerHand.cards];
-  if (state.dealerHand.hiddenCard) {
-    dealerCards.push(state.dealerHand.hiddenCard);
-  }
-
+  const dealerCards = revealDealerCards(state.dealerHand);
   const dealerHand = playDealerTurn(dealerCards, shoe, discard);
   const { outcome, payout, message } = resolveRound(playerHand, dealerHand, doubleBet);
 
-  return {
-    ...state,
-    phase: PHASES.RESOLVED,
+  return buildResolvedState(state, {
     playerHand,
-    dealerHand: { ...dealerHand, hiddenCard: null },
-    currentBet: doubleBet,
+    dealerCards,
     balance: newBalance + payout,
+    currentBet: doubleBet,
     outcome,
     message,
     shoeSize: shoe.length,
-    availableActions: [],
-  };
+  });
 }
 
 function executeStand(state, shoe, discard) {
-  // Reveal dealer hidden card and play dealer turn
-  const dealerCards = [...state.dealerHand.cards];
-  if (state.dealerHand.hiddenCard) {
-    dealerCards.push(state.dealerHand.hiddenCard);
-  }
-
+  const dealerCards = revealDealerCards(state.dealerHand);
   const dealerHand = playDealerTurn(dealerCards, shoe, discard);
   const { outcome, payout, message } = resolveRound(state.playerHand, dealerHand, state.currentBet);
 
-  return {
-    ...state,
-    phase: PHASES.RESOLVED,
-    dealerHand: { ...dealerHand, hiddenCard: null },
+  return buildResolvedState(state, {
+    playerHand: state.playerHand,
+    dealerCards,
+    balance: state.balance + payout,
+    currentBet: state.currentBet,
     outcome,
     message,
-    balance: state.balance + payout,
     shoeSize: shoe.length,
-    availableActions: [],
-  };
+  });
 }
