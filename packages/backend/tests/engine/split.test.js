@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Deck } from '../../src/engine/deck.js';
 import { executeAction } from '../../src/engine/actions.js';
 import { placeBet } from '../../src/engine/round.js';
 import { evaluateHand } from '../../src/engine/evaluator.js';
@@ -36,8 +37,8 @@ describe('split — pair detection', () => {
   it('split is offered for equal-value pair (default: same value)', () => {
     const state = createDefaultGameState('test');
     // Player: 8+8, Dealer: 5+K (no insurance, no peek)
-    const shoe = buildShoe(card('8'), card('5'), card('8', 'spades'), card('K'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('8'), card('5'), card('8', 'spades'), card('K')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
     expect(result.availableActions).toContain(ACTIONS.SPLIT);
@@ -45,25 +46,25 @@ describe('split — pair detection', () => {
 
   it('split is offered for 10-J (same value, different rank) by default', () => {
     const state = createDefaultGameState('test');
-    const shoe = buildShoe(card('10'), card('5'), card('J'), card('K'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('10'), card('5'), card('J'), card('K')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.availableActions).toContain(ACTIONS.SPLIT);
   });
 
   it('split NOT offered for 10-J when split_requires_identical_rank', () => {
     const state = createDefaultGameState('test');
-    const shoe = buildShoe(card('10'), card('5'), card('J'), card('K'));
+    const deck = new Deck(buildShoe(card('10'), card('5'), card('J'), card('K')));
     const rules = createRules({ split_requires_identical_rank: true });
-    const result = placeBet(state, shoe, [], 100, rules);
+    const result = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).not.toContain(ACTIONS.SPLIT);
   });
 
   it('split NOT offered for non-pair', () => {
     const state = createDefaultGameState('test');
-    const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.availableActions).not.toContain(ACTIONS.SPLIT);
   });
@@ -71,8 +72,8 @@ describe('split — pair detection', () => {
   it('split NOT offered when balance < bet', () => {
     const state = createDefaultGameState('test');
     state.balance = 100; // exactly enough for bet, not for split
-    const shoe = buildShoe(card('8'), card('5'), card('8', 'spades'), card('K'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('8'), card('5'), card('8', 'spades'), card('K')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.availableActions).not.toContain(ACTIONS.SPLIT);
   });
@@ -84,8 +85,8 @@ describe('split — basic mechanics', () => {
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
     // Shoe: hand1 gets 3, hand2 gets 4
-    const shoe = buildShoe(card('3'), card('4'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('3'), card('4')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     expect(result.playerHands).toHaveLength(2);
     expect(result.playerHands[0].cards[0].rank).toBe('8');
@@ -98,8 +99,8 @@ describe('split — basic mechanics', () => {
     const state = makeSplitableState(
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
-    const shoe = buildShoe(card('3'), card('4'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('3'), card('4')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     expect(result.balance).toBe(800); // 900 - 100 extra
   });
@@ -108,8 +109,8 @@ describe('split — basic mechanics', () => {
     const state = makeSplitableState(
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
-    const shoe = buildShoe(card('3'), card('4'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('3'), card('4')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     expect(result.activeHandIndex).toBe(0);
     expect(result.playerHand.cards[0].rank).toBe('8');
@@ -121,8 +122,8 @@ describe('split — basic mechanics', () => {
       card('10'), card('10', 'spades'), card('5'), card('K'), 900, 100
     );
     // Each 10 gets an A → total 21 but not blackjack
-    const shoe = buildShoe(card('A'), card('A', 'spades'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('A'), card('A', 'spades')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     expect(result.playerHands[0].total).toBe(21);
     expect(result.playerHands[0].blackjack).toBe(false);
@@ -137,9 +138,9 @@ describe('split — playing split hands', () => {
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
     // Split cards: 3 and 4. Then hit draws a 2.
-    const shoe = buildShoe(card('3'), card('4'), card('2'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
-    const hitResult = executeAction(splitResult, shoe, [], ACTIONS.HIT);
+    const deck = new Deck(buildShoe(card('3'), card('4'), card('2')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
+    const hitResult = executeAction(splitResult, deck, ACTIONS.HIT);
 
     expect(hitResult.playerHands[0].cards).toHaveLength(3);
     expect(hitResult.playerHands[0].total).toBe(13); // 8+3+2
@@ -149,9 +150,9 @@ describe('split — playing split hands', () => {
     const state = makeSplitableState(
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
-    const shoe = buildShoe(card('3'), card('4'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
-    const standResult = executeAction(splitResult, shoe, [], ACTIONS.STAND);
+    const deck = new Deck(buildShoe(card('3'), card('4')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
+    const standResult = executeAction(splitResult, deck, ACTIONS.STAND);
 
     expect(standResult.activeHandIndex).toBe(1);
     expect(standResult.playerHand.cards[0].rank).toBe('8');
@@ -163,9 +164,9 @@ describe('split — playing split hands', () => {
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
     // hand1: 8+10=18, hit K → 28 bust
-    const shoe = buildShoe(card('10'), card('4'), card('K'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
-    const hitResult = executeAction(splitResult, shoe, [], ACTIONS.HIT);
+    const deck = new Deck(buildShoe(card('10'), card('4'), card('K')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
+    const hitResult = executeAction(splitResult, deck, ACTIONS.HIT);
 
     expect(hitResult.playerHands[0].busted).toBe(true);
     expect(hitResult.activeHandIndex).toBe(1);
@@ -177,13 +178,13 @@ describe('split — playing split hands', () => {
     );
     // Split: hand1 gets 10 (=18), hand2 gets 10 (=18)
     // Dealer: 5+K=15, draws 3→18
-    const shoe = buildShoe(card('10'), card('10', 'spades'), card('3'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('10'), card('10', 'spades'), card('3')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
 
     // Stand on hand 1
-    const stand1 = executeAction(splitResult, shoe, [], ACTIONS.STAND);
+    const stand1 = executeAction(splitResult, deck, ACTIONS.STAND);
     // Stand on hand 2 → triggers dealer play + resolution
-    const stand2 = executeAction(stand1, shoe, [], ACTIONS.STAND);
+    const stand2 = executeAction(stand1, deck, ACTIONS.STAND);
 
     expect(stand2.phase).toBe(PHASES.RESOLVED);
     expect(stand2.availableActions).toEqual([]);
@@ -196,10 +197,10 @@ describe('split — playing split hands', () => {
     );
     // Split: hand1 gets 10 (=18), hand2 gets 10 (=18)
     // Dealer: 6+K=16, draws 10→26 bust
-    const shoe = buildShoe(card('10'), card('10', 'spades'), card('10', 'clubs'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
-    const stand1 = executeAction(splitResult, shoe, [], ACTIONS.STAND);
-    const stand2 = executeAction(stand1, shoe, [], ACTIONS.STAND);
+    const deck = new Deck(buildShoe(card('10'), card('10', 'spades'), card('10', 'clubs')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
+    const stand1 = executeAction(splitResult, deck, ACTIONS.STAND);
+    const stand2 = executeAction(stand1, deck, ACTIONS.STAND);
 
     // Both win at 1:1: 100*2 + 100*2 = 400
     expect(stand2.balance).toBe(800 + 400);
@@ -211,11 +212,11 @@ describe('split — playing split hands', () => {
     );
     // hand1: 8+K=18, hit Q→28 bust. hand2: 8+10=18
     // Dealer: 6+K=16, draws Q→26 bust → hand2 wins
-    const shoe = buildShoe(card('K'), card('10'), card('Q'), card('Q', 'clubs'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
-    const hit1 = executeAction(splitResult, shoe, [], ACTIONS.HIT);
+    const deck = new Deck(buildShoe(card('K'), card('10'), card('Q'), card('Q', 'clubs')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
+    const hit1 = executeAction(splitResult, deck, ACTIONS.HIT);
     // hand 1 busted, auto-advance to hand 2
-    const stand2 = executeAction(hit1, shoe, [], ACTIONS.STAND);
+    const stand2 = executeAction(hit1, deck, ACTIONS.STAND);
 
     // hand1: bust → payout 0. hand2: win → payout 200. Total: 200
     expect(stand2.balance).toBe(800 + 200);
@@ -226,11 +227,11 @@ describe('split — playing split hands', () => {
       card('6'), card('6', 'spades'), card('5'), card('8'), 900, 100
     );
     // hand1: 6+K=16, hit Q→26 bust. hand2: 6+K=16, hit Q→26 bust
-    const shoe = buildShoe(card('K'), card('K', 'spades'), card('Q'), card('Q', 'spades'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
-    const hit1 = executeAction(splitResult, shoe, [], ACTIONS.HIT);
+    const deck = new Deck(buildShoe(card('K'), card('K', 'spades'), card('Q'), card('Q', 'spades')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
+    const hit1 = executeAction(splitResult, deck, ACTIONS.HIT);
     // hand 1 busted, advance to hand 2
-    const hit2 = executeAction(hit1, shoe, [], ACTIONS.HIT);
+    const hit2 = executeAction(hit1, deck, ACTIONS.HIT);
 
     expect(hit2.phase).toBe(PHASES.RESOLVED);
     // Both bust, balance = 800 + 0
@@ -247,8 +248,8 @@ describe('split aces', () => {
     );
     // Each ace gets one card: 10 and 8
     // Dealer: 5+K=15, draws 3→18
-    const shoe = buildShoe(card('10'), card('8'), card('3'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('10'), card('8'), card('3')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     // Should be resolved (both aces auto-settled)
     expect(result.phase).toBe(PHASES.RESOLVED);
@@ -263,8 +264,8 @@ describe('split aces', () => {
     );
     // Ace gets 10 → 21 (not blackjack). Other ace gets 5 → 16.
     // Dealer: 6+K=16, draws 5→21
-    const shoe = buildShoe(card('10'), card('5'), card('5', 'clubs'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('10'), card('5'), card('5', 'clubs')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     expect(result.playerHands[0].total).toBe(21);
     expect(result.playerHands[0].blackjack).toBe(false);
@@ -277,9 +278,9 @@ describe('split aces', () => {
     const state = makeSplitableState(
       card('A'), card('A', 'spades'), card('5'), card('K'), 900, 100
     );
-    const shoe = buildShoe(card('3'), card('4'));
+    const deck = new Deck(buildShoe(card('3'), card('4')));
     const rules = createRules({ allow_hit_split_aces: true });
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT, rules);
+    const result = executeAction(state, deck, ACTIONS.SPLIT, rules);
 
     // Should NOT be auto-settled
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
@@ -294,15 +295,15 @@ describe('re-split', () => {
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
     // Split: hand1 gets 8♦ (pair again!), hand2 gets 4
-    const shoe = buildShoe(card('8', 'diamonds'), card('4'), card('3'), card('5'));
+    const deck = new Deck(buildShoe(card('8', 'diamonds'), card('4'), card('3'), card('5')));
 
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
     expect(splitResult.playerHands[0].cards[0].rank).toBe('8');
     expect(splitResult.playerHands[0].cards[1].rank).toBe('8');
     expect(splitResult.availableActions).toContain(ACTIONS.SPLIT);
 
     // Re-split hand 1
-    const resplitResult = executeAction(splitResult, shoe, [], ACTIONS.SPLIT);
+    const resplitResult = executeAction(splitResult, deck, ACTIONS.SPLIT);
     expect(resplitResult.playerHands).toHaveLength(3);
     expect(resplitResult.balance).toBe(700); // 900 - 100 - 100
   });
@@ -313,8 +314,8 @@ describe('re-split', () => {
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
     // After split → 2 hands (= max). Should not offer split again.
-    const shoe = buildShoe(card('8', 'diamonds'), card('4'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT, rules);
+    const deck = new Deck(buildShoe(card('8', 'diamonds'), card('4')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT, rules);
 
     expect(splitResult.playerHands).toHaveLength(2);
     // Even though hand 1 is a pair, can't re-split (at max)
@@ -327,8 +328,8 @@ describe('re-split', () => {
     );
     // Split aces: hand1 gets A♦ (pair!), hand2 gets 5
     // But allow_resplit_aces is false → auto-settle, no re-split
-    const shoe = buildShoe(card('A', 'diamonds'), card('5'), card('3'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('A', 'diamonds'), card('5'), card('3')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     // Split aces auto-settle — no chance to re-split
     expect(result.phase).toBe(PHASES.RESOLVED);
@@ -340,8 +341,8 @@ describe('re-split', () => {
       card('A'), card('A', 'spades'), card('5'), card('K'), 900, 100
     );
     // Split: hand1 gets A♦ (pair!)
-    const shoe = buildShoe(card('A', 'diamonds'), card('5'), card('3'), card('4'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT, rules);
+    const deck = new Deck(buildShoe(card('A', 'diamonds'), card('5'), card('3'), card('4')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT, rules);
 
     // Should be playable and offer re-split
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
@@ -355,8 +356,8 @@ describe('double after split (DAS)', () => {
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
     // Split: hand1 gets 3 (=11), hand2 gets 4
-    const shoe = buildShoe(card('3'), card('4'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('3'), card('4')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -366,8 +367,8 @@ describe('double after split (DAS)', () => {
     const state = makeSplitableState(
       card('8'), card('8', 'spades'), card('5'), card('K'), 900, 100
     );
-    const shoe = buildShoe(card('3'), card('4'));
-    const result = executeAction(state, shoe, [], ACTIONS.SPLIT, rules);
+    const deck = new Deck(buildShoe(card('3'), card('4')));
+    const result = executeAction(state, deck, ACTIONS.SPLIT, rules);
 
     expect(result.availableActions).not.toContain(ACTIONS.DOUBLE);
   });
@@ -377,11 +378,11 @@ describe('double after split (DAS)', () => {
       card('5'), card('5', 'spades'), card('6'), card('K'), 900, 100
     );
     // Split: hand1 gets 6 (=11), hand2 gets 4
-    const shoe = buildShoe(card('6'), card('4'), card('9'));
-    const splitResult = executeAction(state, shoe, [], ACTIONS.SPLIT);
+    const deck = new Deck(buildShoe(card('6'), card('4'), card('9')));
+    const splitResult = executeAction(state, deck, ACTIONS.SPLIT);
 
     // Double on hand 1: 5+6=11, draw 9=20
-    const doubleResult = executeAction(splitResult, shoe, [], ACTIONS.DOUBLE);
+    const doubleResult = executeAction(splitResult, deck, ACTIONS.DOUBLE);
 
     expect(doubleResult.playerHands[0].bet).toBe(200); // doubled
     expect(doubleResult.playerHands[0].cards).toHaveLength(3);

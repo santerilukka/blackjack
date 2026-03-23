@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Deck } from '../../src/engine/deck.js';
 import { placeBet, resolveInsurance } from '../../src/engine/round.js';
 import { PHASES, ACTIONS, OUTCOMES, DEFAULT_BALANCE, createDefaultGameState, createRules } from '@blackjack/shared';
 
@@ -13,8 +14,8 @@ describe('insurance — dealer shows Ace', () => {
   it('enters insurance phase when dealer shows Ace', () => {
     const state = createDefaultGameState('test');
     // Deal: player1=8, dealerFaceUp=A, player2=9, dealerHidden=K
-    const shoe = buildShoe(card('8'), card('A'), card('9'), card('K'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('8'), card('A'), card('9'), card('K')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.INSURANCE);
     expect(result.availableActions).toEqual([ACTIONS.INSURANCE]);
@@ -26,8 +27,8 @@ describe('insurance — dealer shows Ace', () => {
   it('offers even money message when player has blackjack', () => {
     const state = createDefaultGameState('test');
     // Player: A+K=blackjack, Dealer: A+5
-    const shoe = buildShoe(card('A'), card('A', 'spades'), card('K'), card('5'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('A'), card('A', 'spades'), card('K'), card('5')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.INSURANCE);
     expect(result.playerHand.blackjack).toBe(true);
@@ -37,16 +38,16 @@ describe('insurance — dealer shows Ace', () => {
   it('does NOT enter insurance phase when dealer shows 10-value', () => {
     const state = createDefaultGameState('test');
     // Deal: player1=8, dealerFaceUp=K, player2=9, dealerHidden=5
-    const shoe = buildShoe(card('8'), card('K'), card('9'), card('5'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('8'), card('K'), card('9'), card('5')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
   });
 
   it('does NOT enter insurance phase when dealer shows 2-9', () => {
     const state = createDefaultGameState('test');
-    const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
-    const result = placeBet(state, shoe, [], 100);
+    const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
+    const result = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
   });
@@ -75,8 +76,8 @@ describe('resolveInsurance — accept insurance, dealer has blackjack', () => {
     const state = makeInsuranceState(
       [card('8'), card('9')], card('A'), card('K'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], true);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, true);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe('lose');
@@ -91,8 +92,8 @@ describe('resolveInsurance — accept insurance, dealer has blackjack', () => {
     const state = makeInsuranceState(
       [card('A'), card('K')], card('A', 'spades'), card('Q'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], true);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, true);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe('push');
@@ -104,8 +105,8 @@ describe('resolveInsurance — accept insurance, dealer has blackjack', () => {
     const state = makeInsuranceState(
       [card('8'), card('9')], card('A'), card('K'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], false);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, false);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe('lose');
@@ -117,8 +118,8 @@ describe('resolveInsurance — accept insurance, dealer has blackjack', () => {
     const state = makeInsuranceState(
       [card('A'), card('K')], card('A', 'spades'), card('Q'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], false);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, false);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe('push');
@@ -150,8 +151,8 @@ describe('resolveInsurance — dealer does NOT have blackjack', () => {
     const state = makeInsuranceState(
       [card('8'), card('9')], card('A'), card('5'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], true);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, true);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
     // Balance: 900 - 50 (insurance lost) = 850
@@ -165,8 +166,8 @@ describe('resolveInsurance — dealer does NOT have blackjack', () => {
     const state = makeInsuranceState(
       [card('8'), card('9')], card('A'), card('5'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], false);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, false);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
     expect(result.balance).toBe(900); // unchanged
@@ -178,8 +179,8 @@ describe('resolveInsurance — dealer does NOT have blackjack', () => {
     const state = makeInsuranceState(
       [card('A'), card('K')], card('A', 'spades'), card('5'), 100
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], false);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, false);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.BLACKJACK);
@@ -192,8 +193,8 @@ describe('resolveInsurance — dealer does NOT have blackjack', () => {
     const state = makeInsuranceState(
       [card('8'), card('9')], card('A'), card('5'), 200
     );
-    const shoe = buildShoe();
-    const result = resolveInsurance(state, shoe, [], true);
+    const deck = new Deck(buildShoe());
+    const result = resolveInsurance(state, deck, true);
 
     // Insurance bet = 200/2 = 100
     // Balance: 800 - 100 = 700

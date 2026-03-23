@@ -1,20 +1,18 @@
 import { DEFAULT_RULES } from '@blackjack/shared';
-import { drawCard } from './shoe.js';
 import { evaluateHand } from './evaluator.js';
 
 /**
  * Play the dealer's turn to completion.
  * @param {import('@blackjack/shared').Card[]} dealerCards
- * @param {import('@blackjack/shared').Card[]} shoe
- * @param {import('@blackjack/shared').Card[]} discard
+ * @param {import('./deck.js').Deck} deck
  * @param {import('@blackjack/shared').RuleConfig} [rules]
  * @returns {import('@blackjack/shared').Hand}
  */
-export function playDealerTurn(dealerCards, shoe, discard, rules = DEFAULT_RULES) {
+export function playDealerTurn(dealerCards, deck, rules = DEFAULT_RULES) {
   let hand = evaluateHand(dealerCards);
 
   while (dealerShouldHit(hand, rules)) {
-    dealerCards.push(drawCard(shoe, discard));
+    dealerCards.push(deck.draw());
     hand = evaluateHand(dealerCards);
   }
 

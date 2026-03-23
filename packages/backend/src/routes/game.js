@@ -3,17 +3,17 @@ import { sessionGuard } from '../middleware/sessionGuard.js';
 import { updateSession } from '../models/sessionManager.js';
 import { updateBalance } from '../models/userManager.js';
 import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
-import { placeBet, resolveInsurance } from '../engine/round.js';
+import { placeBet, resolveInsurance, startNewRound } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
-import { startNewRound } from '../engine/round.js';
 
 /**
- * Sync the game state balance back to the user store.
+ * Persist updated game state and sync balance to user store.
  */
-function syncBalance(req, state) {
+function commitState(req, gameSessionId, newState) {
+  updateSession(gameSessionId, newState);
   const username = req.session?.username;
   if (username) {
-    updateBalance(username, state.balance);
+    updateBalance(username, newState.balance);
   }
 }
 
@@ -24,7 +24,7 @@ const router = Router();
  */
 router.post('/bet', sessionGuard, (req, res) => {
   const { amount } = req.body;
-  const { gameState: state, shoe, discard, gameSessionId } = req;
+  const { gameState: state, deck, gameSessionId } = req;
 
   if (state.phase !== PHASES.BETTING) {
     return res.status(400).json({ error: 'Cannot place bet outside of betting phase.' });
@@ -42,9 +42,8 @@ router.post('/bet', sessionGuard, (req, res) => {
     return res.status(400).json({ error: `Maximum bet is $${MAX_BET}.` });
   }
 
-  const newState = placeBet(state, shoe, discard, amount);
-  updateSession(gameSessionId, newState);
-  syncBalance(req, newState);
+  const newState = placeBet(state, deck, amount);
+  commitState(req, gameSessionId, newState);
   res.json(newState);
 });
 
@@ -53,7 +52,7 @@ router.post('/bet', sessionGuard, (req, res) => {
  */
 router.post('/action', sessionGuard, (req, res) => {
   const { action } = req.body;
-  const { gameState: state, shoe, discard, gameSessionId } = req;
+  const { gameState: state, deck, gameSessionId } = req;
 
   if (state.phase !== PHASES.PLAYER_TURN) {
     return res.status(400).json({ error: 'Cannot perform action outside of player turn.' });
@@ -67,9 +66,8 @@ router.post('/action', sessionGuard, (req, res) => {
     return res.status(400).json({ error: `Action not available: ${action}` });
   }
 
-  const newState = executeAction(state, shoe, discard, action);
-  updateSession(gameSessionId, newState);
-  syncBalance(req, newState);
+  const newState = executeAction(state, deck, action);
+  commitState(req, gameSessionId, newState);
   res.json(newState);
 });
 
@@ -78,7 +76,7 @@ router.post('/action', sessionGuard, (req, res) => {
  */
 router.post('/insurance', sessionGuard, (req, res) => {
   const { accept } = req.body;
-  const { gameState: state, shoe, discard, gameSessionId } = req;
+  const { gameState: state, deck, gameSessionId } = req;
 
   if (state.phase !== PHASES.INSURANCE) {
     return res.status(400).json({ error: 'Insurance is not being offered.' });
@@ -88,9 +86,8 @@ router.post('/insurance', sessionGuard, (req, res) => {
     return res.status(400).json({ error: 'Must specify accept: true or false.' });
   }
 
-  const newState = resolveInsurance(state, shoe, discard, accept);
-  updateSession(gameSessionId, newState);
-  syncBalance(req, newState);
+  const newState = resolveInsurance(state, deck, accept);
+  commitState(req, gameSessionId, newState);
   res.json(newState);
 });
 
@@ -98,15 +95,14 @@ router.post('/insurance', sessionGuard, (req, res) => {
  * POST /api/new-round — Start a new round after resolution.
  */
 router.post('/new-round', sessionGuard, (req, res) => {
-  const { gameState: state, shoe, discard, gameSessionId } = req;
+  const { gameState: state, deck, gameSessionId } = req;
 
   if (state.phase !== PHASES.RESOLVED) {
     return res.status(400).json({ error: 'Can only start a new round after resolution.' });
   }
 
-  const newState = startNewRound(state, shoe, discard);
-  updateSession(gameSessionId, newState);
-  syncBalance(req, newState);
+  const newState = startNewRound(state, deck);
+  commitState(req, gameSessionId, newState);
   res.json(newState);
 });
 

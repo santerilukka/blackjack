@@ -1,12 +1,11 @@
 import crypto from 'node:crypto';
 import { createDefaultGameState } from '@blackjack/shared';
-import { createShoe } from '../engine/shoe.js';
+import { Deck } from '../engine/deck.js';
 
 /**
  * @typedef {Object} Session
  * @property {import('@blackjack/shared').GameState} state
- * @property {object[]} shoe
- * @property {object[]} discard
+ * @property {import('../engine/deck.js').Deck} deck
  */
 
 /** @type {Map<string, Session>} */
@@ -23,9 +22,8 @@ export function createSession(initialBalance) {
   if (initialBalance !== undefined) {
     state.balance = initialBalance;
   }
-  const shoe = createShoe();
-  const discard = [];
-  const session = { state, shoe, discard };
+  const deck = Deck.create();
+  const session = { state, deck };
   sessions.set(sessionId, session);
   return session;
 }

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Deck } from '../../src/engine/deck.js';
 import { DEFAULT_RULES, createRules } from '@blackjack/shared';
 import { playDealerTurn, dealerShouldHit } from '../../src/engine/dealer.js';
 import { resolveRound } from '../../src/engine/resolver.js';
@@ -82,16 +83,16 @@ describe('dealer_hits_soft_17', () => {
   it('H17: dealer plays to completion hitting soft 17', () => {
     const rules = createRules({ dealer_hits_soft_17: true });
     const dealerCards = [card('A'), card('6')]; // soft 17
-    const shoe = buildShoe(card('3')); // draws 3 → soft 20
-    const result = playDealerTurn(dealerCards, shoe, [], rules);
+    const deck = new Deck(buildShoe(card('3'))); // draws 3 → soft 20
+    const result = playDealerTurn(dealerCards, deck, rules);
     expect(result.total).toBe(20);
   });
 
   it('S17: dealer stands immediately on soft 17', () => {
     const rules = createRules({ dealer_hits_soft_17: false });
     const dealerCards = [card('A'), card('6')]; // soft 17
-    const shoe = buildShoe(card('3'));
-    const result = playDealerTurn(dealerCards, shoe, [], rules);
+    const deck = new Deck(buildShoe(card('3')));
+    const result = playDealerTurn(dealerCards, deck, rules);
     expect(result.total).toBe(17);
     expect(result.cards).toHaveLength(2); // no extra cards drawn
   });
@@ -141,9 +142,9 @@ describe('double_down_on restrictions', () => {
   it('any_two_cards: double allowed on any total', () => {
     const state = createDefaultGameState('test');
     // Player: 8+9=17
-    const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
+    const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
     const rules = createRules({ double_down_on: 'any_two_cards' });
-    const result = placeBet(state, shoe, [], 100, rules);
+    const result = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -151,9 +152,9 @@ describe('double_down_on restrictions', () => {
   it('9_10_11: double allowed on 11', () => {
     const state = createDefaultGameState('test');
     // Player: 5+6=11
-    const shoe = buildShoe(card('5'), card('7'), card('6'), card('K'));
+    const deck = new Deck(buildShoe(card('5'), card('7'), card('6'), card('K')));
     const rules = createRules({ double_down_on: '9_10_11' });
-    const result = placeBet(state, shoe, [], 100, rules);
+    const result = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -161,9 +162,9 @@ describe('double_down_on restrictions', () => {
   it('9_10_11: double NOT allowed on 12', () => {
     const state = createDefaultGameState('test');
     // Player: 5+7=12
-    const shoe = buildShoe(card('5'), card('3'), card('7'), card('K'));
+    const deck = new Deck(buildShoe(card('5'), card('3'), card('7'), card('K')));
     const rules = createRules({ double_down_on: '9_10_11' });
-    const result = placeBet(state, shoe, [], 100, rules);
+    const result = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).not.toContain(ACTIONS.DOUBLE);
   });
@@ -171,9 +172,9 @@ describe('double_down_on restrictions', () => {
   it('10_11: double allowed on 10', () => {
     const state = createDefaultGameState('test');
     // Player: 4+6=10
-    const shoe = buildShoe(card('4'), card('3'), card('6'), card('K'));
+    const deck = new Deck(buildShoe(card('4'), card('3'), card('6'), card('K')));
     const rules = createRules({ double_down_on: '10_11' });
-    const result = placeBet(state, shoe, [], 100, rules);
+    const result = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -181,9 +182,9 @@ describe('double_down_on restrictions', () => {
   it('10_11: double NOT allowed on 9', () => {
     const state = createDefaultGameState('test');
     // Player: 4+5=9
-    const shoe = buildShoe(card('4'), card('3'), card('5'), card('K'));
+    const deck = new Deck(buildShoe(card('4'), card('3'), card('5'), card('K')));
     const rules = createRules({ double_down_on: '10_11' });
-    const result = placeBet(state, shoe, [], 100, rules);
+    const result = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).not.toContain(ACTIONS.DOUBLE);
   });
