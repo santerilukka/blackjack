@@ -7,6 +7,7 @@ export const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
 /** @enum {string} */
 export const PHASES = {
   BETTING: 'betting',
+  INSURANCE: 'insurance',
   PLAYER_TURN: 'playerTurn',
   DEALER_TURN: 'dealerTurn',
   RESOLVED: 'resolved',
@@ -17,6 +18,9 @@ export const ACTIONS = {
   HIT: 'hit',
   STAND: 'stand',
   DOUBLE: 'double',
+  SPLIT: 'split',
+  SURRENDER: 'surrender',
+  INSURANCE: 'insurance',
 };
 
 /** @enum {string} */
@@ -25,6 +29,7 @@ export const OUTCOMES = {
   LOSE: 'lose',
   PUSH: 'push',
   BLACKJACK: 'blackjack',
+  SURRENDER: 'surrender',
 };
 
 export const PAYOUTS = {

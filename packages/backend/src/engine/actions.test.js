@@ -272,6 +272,6 @@ describe('executeAction — invalid action', () => {
   it('throws on unknown action', () => {
     const state = makeState([card('10'), card('8')], card('5'), card('K'));
     const shoe = buildShoe();
-    expect(() => executeAction(state, shoe, [], 'split')).toThrow('Unknown action: split');
+    expect(() => executeAction(state, shoe, [], 'foo')).toThrow('Unknown action: foo');
   });
 });

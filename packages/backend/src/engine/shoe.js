@@ -1,11 +1,11 @@
-import { RANKS, SUITS, NUM_DECKS, RESHUFFLE_THRESHOLD } from '@blackjack/shared';
+import { RANKS, SUITS, DEFAULT_RULES } from '@blackjack/shared';
 
 /**
  * Create a shoe with multiple decks and shuffle it.
- * @param {number} [numDecks=NUM_DECKS]
+ * @param {number} [numDecks]
  * @returns {import('@blackjack/shared').Card[]}
  */
-export function createShoe(numDecks = NUM_DECKS) {
+export function createShoe(numDecks = DEFAULT_RULES.num_decks) {
   const cards = [];
   for (let d = 0; d < numDecks; d++) {
     for (const suit of SUITS) {
@@ -36,7 +36,7 @@ export function shuffle(array) {
  * @returns {import('@blackjack/shared').Card}
  */
 export function drawCard(shoe, discard) {
-  if (needsReshuffle(shoe)) {
+  if (shoe.length === 0) {
     reshuffleShoe(shoe, discard);
   }
   return shoe.pop();
@@ -56,11 +56,13 @@ export function reshuffleShoe(shoe, discard) {
 }
 
 /**
- * Check if shoe needs reshuffling.
+ * Check if shoe needs reshuffling based on penetration.
  * @param {import('@blackjack/shared').Card[]} shoe
+ * @param {import('@blackjack/shared').RuleConfig} [rules]
  * @returns {boolean}
  */
-export function needsReshuffle(shoe) {
-  const totalCards = NUM_DECKS * 52;
-  return shoe.length < totalCards * RESHUFFLE_THRESHOLD;
+export function needsReshuffle(shoe, rules = DEFAULT_RULES) {
+  const totalCards = rules.num_decks * 52;
+  const threshold = 1 - rules.penetration; // penetration 0.75 → reshuffle at 25% remaining
+  return shoe.length < totalCards * threshold;
 }

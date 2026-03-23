@@ -69,13 +69,12 @@ describe('drawCard', () => {
     expect(shoe).toHaveLength(initialLength - 1);
   });
 
-  it('reshuffles when shoe is below threshold', () => {
-    // Create a nearly empty shoe
-    const shoe = [{ rank: '5', suit: 'clubs' }];
+  it('reshuffles when shoe is empty', () => {
+    const shoe = [];
     const discard = Array.from({ length: 200 }, (_, i) => ({ rank: 'K', suit: 'spades' }));
     const card = drawCard(shoe, discard);
-    // After reshuffle: remaining shoe (1) + discard (200) = 201, minus the drawn card = 200
-    expect(shoe.length).toBe(200);
+    // After reshuffle: discard (200) moved to shoe, minus the drawn card = 199
+    expect(shoe.length).toBe(199);
     expect(discard.length).toBe(0);
     expect(card.rank).toBeDefined();
     expect(card.suit).toBeDefined();

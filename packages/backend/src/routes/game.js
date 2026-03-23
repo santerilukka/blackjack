@@ -3,7 +3,7 @@ import { sessionGuard } from '../middleware/sessionGuard.js';
 import { updateSession } from '../models/sessionManager.js';
 import { updateBalance } from '../models/userManager.js';
 import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
-import { placeBet } from '../engine/round.js';
+import { placeBet, resolveInsurance } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
 import { startNewRound } from '../engine/round.js';
 
@@ -68,6 +68,27 @@ router.post('/action', sessionGuard, (req, res) => {
   }
 
   const newState = executeAction(state, shoe, discard, action);
+  updateSession(gameSessionId, newState);
+  syncBalance(req, newState);
+  res.json(newState);
+});
+
+/**
+ * POST /api/insurance — Insurance decision.
+ */
+router.post('/insurance', sessionGuard, (req, res) => {
+  const { accept } = req.body;
+  const { gameState: state, shoe, discard, gameSessionId } = req;
+
+  if (state.phase !== PHASES.INSURANCE) {
+    return res.status(400).json({ error: 'Insurance is not being offered.' });
+  }
+
+  if (typeof accept !== 'boolean') {
+    return res.status(400).json({ error: 'Must specify accept: true or false.' });
+  }
+
+  const newState = resolveInsurance(state, shoe, discard, accept);
   updateSession(gameSessionId, newState);
   syncBalance(req, newState);
   res.json(newState);

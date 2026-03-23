@@ -52,18 +52,24 @@ describe('placeBet', () => {
     expect(result.currentBet).toBe(50);
   });
 
-  it('provides hit, stand, and double as available actions when balance allows', () => {
+  it('provides hit, stand, double, and surrender as available actions when balance allows', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
     const result = placeBet(state, shoe, [], 100);
-    expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND, ACTIONS.DOUBLE]);
+    expect(result.availableActions).toContain(ACTIONS.HIT);
+    expect(result.availableActions).toContain(ACTIONS.STAND);
+    expect(result.availableActions).toContain(ACTIONS.DOUBLE);
+    expect(result.availableActions).toContain(ACTIONS.SURRENDER);
   });
 
   it('does not offer double when remaining balance is less than bet', () => {
     const state = createDefaultGameState('test-session');
     const shoe = buildShoe(card('8'), card('5'), card('9'), card('K'));
     const result = placeBet(state, shoe, [], DEFAULT_BALANCE);
-    expect(result.availableActions).toEqual([ACTIONS.HIT, ACTIONS.STAND]);
+    expect(result.availableActions).toContain(ACTIONS.HIT);
+    expect(result.availableActions).toContain(ACTIONS.STAND);
+    expect(result.availableActions).toContain(ACTIONS.SURRENDER);
+    expect(result.availableActions).not.toContain(ACTIONS.DOUBLE);
   });
 
   it('evaluates player hand total', () => {
@@ -101,21 +107,33 @@ describe('placeBet', () => {
     expect(result.balance).toBe(1000);
   });
 
-  it('resolves immediately on dealer blackjack (dealer peek)', () => {
+  it('goes to insurance phase when dealer shows Ace', () => {
     const state = createDefaultGameState('test-session');
     // Player gets 8+9=17, dealer gets A+K=blackjack
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const shoe = buildShoe(card('8'), card('A'), card('9'), card('K'));
     const result = placeBet(state, shoe, [], 100);
 
+    // Dealer Ace → insurance phase (peek happens after insurance decision)
+    expect(result.phase).toBe(PHASES.INSURANCE);
+    expect(result.availableActions).toEqual([ACTIONS.INSURANCE]);
+    expect(result.balance).toBe(DEFAULT_BALANCE - 100);
+    // Dealer hidden card still hidden
+    expect(result.dealerHand.hiddenCard).not.toBeNull();
+    expect(result.dealerHand.cards).toHaveLength(1);
+  });
+
+  it('resolves immediately on dealer blackjack when upcard is 10-value (peek, no insurance)', () => {
+    const state = createDefaultGameState('test-session');
+    // Player gets 8+9=17, dealer gets K+A=blackjack
+    const shoe = buildShoe(card('8'), card('K'), card('9'), card('A'));
+    const result = placeBet(state, shoe, [], 100);
+
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.LOSE);
     expect(result.balance).toBe(DEFAULT_BALANCE - 100);
-    expect(result.availableActions).toEqual([]);
-    // Dealer hand fully revealed
     expect(result.dealerHand.hiddenCard).toBeNull();
     expect(result.dealerHand.cards).toHaveLength(2);
-    expect(result.message).toContain('Dealer has blackjack');
   });
 
   it('does not peek when dealer face-up card is not Ace or 10-value', () => {

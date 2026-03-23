@@ -141,7 +141,7 @@ describe('POST /api/action', () => {
     const { client, betRes } = await setupRound(100);
     if (betRes.body.phase !== PHASES.PLAYER_TURN) return;
 
-    const res = await client.post('/api/action').send({ action: 'split' });
+    const res = await client.post('/api/action').send({ action: 'foo' });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/invalid action/i);
   });
@@ -278,7 +278,15 @@ describe('full round lifecycle', () => {
       const betRes = await client.post('/api/bet').send({ amount: 10 });
       expect(betRes.status).toBe(200);
 
-      if (betRes.body.phase === PHASES.PLAYER_TURN) {
+      let phase = betRes.body.phase;
+
+      // Handle insurance phase (dealer shows Ace)
+      if (phase === PHASES.INSURANCE) {
+        const insRes = await client.post('/api/insurance').send({ accept: false });
+        phase = insRes.body.phase;
+      }
+
+      if (phase === PHASES.PLAYER_TURN) {
         const standRes = await client.post('/api/action').send({ action: ACTIONS.STAND });
         expect(standRes.body.phase).toBe(PHASES.RESOLVED);
       }

@@ -14,4 +14,6 @@ export {
 
 export { createDefaultGameState } from './gameState.js';
 
+export { DEFAULT_RULES, createRules } from './ruleConfig.js';
+
 export { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from './shortcuts.js';
