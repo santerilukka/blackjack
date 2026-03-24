@@ -8,25 +8,25 @@ import { executeCommands } from './commandExecutor.js';
 import { tween } from './tween.js';
 import { SeatMarker, computeSeatPositions } from './SeatMarker.js';
 
-const CARD_HEIGHT = 85;
-const CARD_OVERLAP = 28;
-const STACK_CARD_HEIGHT = 70;
+const CARD_HEIGHT = 120;
+const CARD_OVERLAP = 38;
+const STACK_CARD_HEIGHT = 100;
 
 /**
  * All position constants for the table layout.
- * Canvas coordinate system is always 1200x750.
+ * Canvas coordinate system is always 1600x900.
  * Coordinates follow VISUAL_DESIGN_SPEC.md Section 2.
  */
 const LAYOUT = {
-  dealer: { cardsX: 600, cardsY: 180, labelX: 600, labelY: 100 },
-  player: { cardsX: 600, cardsY: 480, labelX: 600, labelY: 430 },
-  bet:    { x: 600, y: 610 },
-  shoe:   { x: 1100, y: 80 },
-  discard: { x: 100, y: 80 },
+  dealer: { cardsX: 800, cardsY: 220, labelX: 800, labelY: 120 },
+  player: { cardsX: 800, cardsY: 570, labelX: 800, labelY: 530 },
+  bet:    { x: 800, y: 730 },
+  shoe:   { x: 1460, y: 100 },
+  discard: { x: 140, y: 100 },
   // Semicircle: flat edge at top, arc curves downward
-  table: { cx: 600, topY: 30, rx: 580 },
+  table: { cx: 800, topY: 20, rx: 770 },
   // Inner arc for seat distribution
-  seats: { cx: 600, cy: 30, rx: 490, ry: 490 },
+  seats: { cx: 800, cy: 20, rx: 650, ry: 650 },
 };
 
 /**
@@ -146,15 +146,15 @@ export class TableScene {
       text: 'BLACKJACK PAYS 3 TO 2',
       style: {
         fill: 'rgba(255, 215, 0, 0.30)',
-        fontSize: 18,
+        fontSize: 26,
         fontFamily: 'Georgia, serif',
         fontWeight: 'bold',
-        letterSpacing: 3,
+        letterSpacing: 4,
       },
     });
     bjText.anchor = { x: 0.5, y: 0.5 };
     bjText.x = cx;
-    bjText.y = 130;
+    bjText.y = 155;
     this.root.addChild(bjText);
 
     // "INSURANCE PAYS 2 TO 1"
@@ -162,15 +162,15 @@ export class TableScene {
       text: 'INSURANCE PAYS 2 TO 1',
       style: {
         fill: 'rgba(255, 215, 0, 0.22)',
-        fontSize: 13,
+        fontSize: 18,
         fontFamily: 'Georgia, serif',
         fontWeight: 'bold',
-        letterSpacing: 2,
+        letterSpacing: 3,
       },
     });
     insText.anchor = { x: 0.5, y: 0.5 };
     insText.x = cx;
-    insText.y = 240;
+    insText.y = 300;
     this.root.addChild(insText);
 
     // "DEALER"
@@ -178,15 +178,15 @@ export class TableScene {
       text: 'DEALER',
       style: {
         fill: 'rgba(255, 255, 255, 0.20)',
-        fontSize: 13,
+        fontSize: 18,
         fontFamily: 'sans-serif',
         fontWeight: 'bold',
-        letterSpacing: 4,
+        letterSpacing: 5,
       },
     });
     dealerText.anchor = { x: 0.5, y: 0.5 };
     dealerText.x = cx;
-    dealerText.y = 75;
+    dealerText.y = 85;
     this.root.addChild(dealerText);
 
     // --- 7 Betting circle markings along the arc ---
@@ -215,10 +215,10 @@ export class TableScene {
       const width = seat.isPlayer ? 2.5 : 2;
 
       // Outer ring
-      g.circle(seat.x, seat.y, 30);
+      g.circle(seat.x, seat.y, 42);
       g.stroke({ color, width });
       // Inner ring
-      g.circle(seat.x, seat.y, 22);
+      g.circle(seat.x, seat.y, 32);
       g.stroke({ color, width: 1 });
     }
     this.root.addChild(g);
@@ -268,7 +268,7 @@ export class TableScene {
       text: '',
       style: {
         fill: '#ffd700',
-        fontSize: 16,
+        fontSize: 22,
         fontFamily: 'sans-serif',
         fontWeight: 'bold',
       },

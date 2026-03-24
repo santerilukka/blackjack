@@ -42,14 +42,14 @@ export function executeAction(state, deck, action, rules = DEFAULT_RULES) {
  * Reveal dealer cards, play dealer turn (if player isn't busted), resolve, and build final state.
  */
 function finishPlayerTurn(state, playerHand, bet, balance, deck, rules) {
-  const { dealerCards, results, deck: newDeck } = runDealerAndResolve(
+  const { dealerHand: finalDealerHand, results, deck: newDeck } = runDealerAndResolve(
     state.dealerHand, [{ hand: playerHand, bet }], deck, rules,
   );
   const { outcome, payout, message } = results[0];
   return {
     state: buildResolvedState(state, {
       playerHand,
-      dealerCards,
+      dealerCards: finalDealerHand.cards,
       balance: balance + payout,
       currentBet: bet,
       outcome,

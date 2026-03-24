@@ -1,6 +1,6 @@
 import { Container, Graphics, Text } from 'pixi.js';
 
-const BET_CIRCLE_RADIUS = 32;
+const BET_CIRCLE_RADIUS = 45;
 
 /** Standard casino chip colours keyed by denomination */
 const CHIP_COLORS = [
@@ -56,7 +56,7 @@ export class BetSpot {
       g.stroke({ color: 'rgba(255,255,255,0.3)', width: 2 });
       const hint = new Text({
         text: 'BET',
-        style: { fill: 'rgba(255,255,255,0.25)', fontSize: 13, fontFamily: 'sans-serif', fontWeight: 'bold' },
+        style: { fill: 'rgba(255,255,255,0.25)', fontSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' },
       });
       hint.anchor = { x: 0.5, y: 0.5 };
       this.container.addChild(g, hint);
@@ -77,7 +77,7 @@ export class BetSpot {
       text: `$${amount}`,
       style: {
         fill: chipStyle.label,
-        fontSize: amount >= 1000 ? 12 : 14,
+        fontSize: amount >= 1000 ? 16 : 20,
         fontFamily: 'sans-serif',
         fontWeight: 'bold',
       },

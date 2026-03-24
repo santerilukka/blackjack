@@ -3,8 +3,8 @@ import { PHASES } from '@blackjack/shared';
 import { usePixiApp } from '../../hooks/usePixiApp.js';
 import { TableScene } from './TableScene.js';
 
-const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 750;
+const CANVAS_WIDTH = 1600;
+const CANVAS_HEIGHT = 900;
 
 /**
  * React wrapper that hosts the PixiJS canvas.

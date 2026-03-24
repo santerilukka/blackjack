@@ -1,8 +1,8 @@
 import { Container, Text } from 'pixi.js';
 import { createCardSprite } from './CardSprite.js';
 
-const STACK_CARD_HEIGHT = 70;
-const STACK_LAYER_OFFSET = 2;
+const STACK_CARD_HEIGHT = 100;
+const STACK_LAYER_OFFSET = 3;
 const STACK_MAX_LAYERS = 5;
 
 /**
@@ -19,7 +19,7 @@ export class StackRenderer {
     this.container.x = x;
     this.container.y = y;
 
-    this.label = new Text({ text: '', style: { fill: '#cccccc', fontSize: 13, fontFamily: 'sans-serif' } });
+    this.label = new Text({ text: '', style: { fill: '#cccccc', fontSize: 18, fontFamily: 'sans-serif' } });
     this.label.anchor = { x: 0.5, y: 0 };
     this.label.x = x;
     this.label.y = y + STACK_CARD_HEIGHT / 2 + 8;
