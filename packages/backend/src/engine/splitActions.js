@@ -1,9 +1,8 @@
-import { ACTIONS, PHASES, DEFAULT_RULES } from '@blackjack/shared';
+import { ACTIONS } from '@blackjack/shared';
 import { evaluateHand } from './evaluator.js';
-import { playDealerTurn } from './dealer.js';
-import { resolveRound } from './resolver.js';
-import { revealDealerCards } from './stateBuilder.js';
-import { getAvailableActions } from './actionRules.js';
+import { buildSplitTurnState, buildSplitResolvedState } from './stateBuilder.js';
+import { actionsForSplitHand } from './actionRules.js';
+import { runDealerAndResolve } from './dealerResolution.js';
 
 /**
  * Create a split hand object.
@@ -28,7 +27,7 @@ function makeSplitHand(cards, bet, fromSplitAces = false) {
  * @param {import('@blackjack/shared').GameState} state
  * @param {import('./deck.js').Deck} deck
  * @param {import('@blackjack/shared').RuleConfig} rules
- * @returns {import('@blackjack/shared').GameState}
+ * @returns {{ state: import('@blackjack/shared').GameState, deck: import('./deck.js').Deck }}
  */
 export function executeSplit(state, deck, rules) {
   const [card1, card2] = state.playerHand.cards;
@@ -37,8 +36,12 @@ export function executeSplit(state, deck, rules) {
   const balance = state.balance - bet; // deduct second bet
 
   // Deal one card to each split hand
-  const hand1Cards = [card1, deck.draw()];
-  const hand2Cards = [card2, deck.draw()];
+  const { card: draw1, deck: d1 } = deck.draw();
+  const { card: draw2, deck: d2 } = d1.draw();
+  let currentDeck = d2;
+
+  const hand1Cards = [card1, draw1];
+  const hand2Cards = [card2, draw2];
 
   const hand1 = makeSplitHand(hand1Cards, bet, isAces);
   const hand2 = makeSplitHand(hand2Cards, bet, isAces);
@@ -50,7 +53,7 @@ export function executeSplit(state, deck, rules) {
     hand1.blackjack = false;
     hand2.blackjack = false;
 
-    return finishSplitRound(state, [hand1, hand2], deck, balance, rules);
+    return finishSplitRound(state, [hand1, hand2], currentDeck, balance, rules);
   }
 
   // 21 from split is not blackjack
@@ -58,32 +61,26 @@ export function executeSplit(state, deck, rules) {
   hand2.blackjack = false;
 
   const hands = [hand1, hand2];
-  const activeHandIndex = 0;
 
-  const availableActions = getAvailableActions({
+  const availableActions = actionsForSplitHand({
     hand: hand1,
     balance,
-    bet,
+    hands,
     isFirstAction: true,
-    isSplitHand: true,
-    fromSplitAces: isAces,
-    totalHands: hands.length,
     rules,
   });
 
   return {
-    ...state,
-    phase: PHASES.PLAYER_TURN,
-    balance,
-    currentBet: bet * 2,
-    playerHand: { ...hand1 },
-    playerHands: hands,
-    activeHandIndex,
-    outcome: null,
-    insuranceBet: state.insuranceBet,
-    message: `Split! Playing hand 1 of ${hands.length}.`,
-    shoeSize: deck.size,
-    availableActions,
+    state: buildSplitTurnState(state, {
+      hands,
+      activeHandIndex: 0,
+      balance,
+      currentBet: bet * 2,
+      message: `Split! Playing hand 1 of ${hands.length}.`,
+      shoeSize: currentDeck.size,
+      availableActions,
+    }),
+    deck: currentDeck,
   };
 }
 
@@ -93,7 +90,7 @@ export function executeSplit(state, deck, rules) {
  * @param {import('./deck.js').Deck} deck
  * @param {string} action
  * @param {import('@blackjack/shared').RuleConfig} rules
- * @returns {import('@blackjack/shared').GameState}
+ * @returns {{ state: import('@blackjack/shared').GameState, deck: import('./deck.js').Deck }}
  */
 export function executeSplitAction(state, deck, action, rules) {
   const hands = state.playerHands.map(h => ({ ...h, cards: [...h.cards] }));
@@ -115,33 +112,35 @@ export function executeSplitAction(state, deck, action, rules) {
 
 function splitHit(state, hands, idx, deck, rules) {
   const hand = hands[idx];
-  hand.cards.push(deck.draw());
+  const { card, deck: newDeck } = deck.draw();
+  hand.cards.push(card);
   const evaluated = evaluateHand(hand.cards);
   Object.assign(hand, evaluated, { blackjack: false });
 
   if (hand.busted) {
     hand.settled = true;
-    return advanceSplitHand(state, hands, idx, deck, rules);
+    return advanceSplitHand(state, hands, idx, newDeck, rules);
   }
 
-  const availableActions = getAvailableActions({
+  const availableActions = actionsForSplitHand({
     hand,
     balance: state.balance,
-    bet: hand.bet,
+    hands,
     isFirstAction: false,
-    isSplitHand: true,
-    fromSplitAces: hand.fromSplitAces,
-    totalHands: hands.length,
     rules,
   });
 
   return {
-    ...state,
-    playerHand: { ...hand },
-    playerHands: hands,
-    shoeSize: deck.size,
-    availableActions,
-    message: `Hand ${idx + 1}: ${hand.total}. Hit or stand?`,
+    state: buildSplitTurnState(state, {
+      hands,
+      activeHandIndex: idx,
+      balance: state.balance,
+      currentBet: state.currentBet,
+      message: `Hand ${idx + 1}: ${hand.total}. Hit or stand?`,
+      shoeSize: newDeck.size,
+      availableActions,
+    }),
+    deck: newDeck,
   };
 }
 
@@ -157,26 +156,31 @@ function splitDouble(state, hands, idx, deck, rules) {
 
   hand.bet *= 2;
   hand.doubled = true;
-  hand.cards.push(deck.draw());
+  const { card, deck: newDeck } = deck.draw();
+  hand.cards.push(card);
   const evaluated = evaluateHand(hand.cards);
   Object.assign(hand, evaluated, { blackjack: false });
   hand.settled = true;
 
   return advanceSplitHand(
     { ...state, balance, currentBet: state.currentBet + additionalBet },
-    hands, idx, deck, rules,
+    hands, idx, newDeck, rules,
   );
 }
 
 function splitResplit(state, hands, idx, deck, rules) {
   const hand = hands[idx];
-  const [card1, card2] = hand.cards;
-  const isAces = card1.rank === 'A' && card2.rank === 'A';
+  const [c1, c2] = hand.cards;
+  const isAces = c1.rank === 'A' && c2.rank === 'A';
   const bet = hand.bet;
   const balance = state.balance - bet;
 
-  const newHand1 = makeSplitHand([card1, deck.draw()], bet, isAces || hand.fromSplitAces);
-  const newHand2 = makeSplitHand([card2, deck.draw()], bet, isAces || hand.fromSplitAces);
+  const { card: draw1, deck: d1 } = deck.draw();
+  const { card: draw2, deck: d2 } = d1.draw();
+  let currentDeck = d2;
+
+  const newHand1 = makeSplitHand([c1, draw1], bet, isAces || hand.fromSplitAces);
+  const newHand2 = makeSplitHand([c2, draw2], bet, isAces || hand.fromSplitAces);
   newHand1.blackjack = false;
   newHand2.blackjack = false;
 
@@ -189,58 +193,52 @@ function splitResplit(state, hands, idx, deck, rules) {
 
     const allSettled = hands.every(h => h.settled);
     if (allSettled) {
-      return finishSplitRound(state, hands, deck, balance, rules);
+      return finishSplitRound(state, hands, currentDeck, balance, rules);
     }
 
     const nextIdx = hands.findIndex((h, i) => !h.settled);
     const nextHand = hands[nextIdx];
-    const availableActions = getAvailableActions({
+    const availableActions = actionsForSplitHand({
       hand: nextHand,
       balance,
-      bet: nextHand.bet,
+      hands,
       isFirstAction: true,
-      isSplitHand: true,
-      fromSplitAces: nextHand.fromSplitAces,
-      totalHands: hands.length,
       rules,
     });
 
     return {
-      ...state,
-      phase: PHASES.PLAYER_TURN,
-      balance,
-      currentBet: state.currentBet + bet,
-      playerHand: { ...nextHand },
-      playerHands: hands,
-      activeHandIndex: nextIdx,
-      message: `Split again! Playing hand ${nextIdx + 1} of ${hands.length}.`,
-      shoeSize: deck.size,
-      availableActions,
+      state: buildSplitTurnState(state, {
+        hands,
+        activeHandIndex: nextIdx,
+        balance,
+        currentBet: state.currentBet + bet,
+        message: `Split again! Playing hand ${nextIdx + 1} of ${hands.length}.`,
+        shoeSize: currentDeck.size,
+        availableActions,
+      }),
+      deck: currentDeck,
     };
   }
 
-  const availableActions = getAvailableActions({
+  const availableActions = actionsForSplitHand({
     hand: newHand1,
     balance,
-    bet,
+    hands,
     isFirstAction: true,
-    isSplitHand: true,
-    fromSplitAces: newHand1.fromSplitAces,
-    totalHands: hands.length,
     rules,
   });
 
   return {
-    ...state,
-    phase: PHASES.PLAYER_TURN,
-    balance,
-    currentBet: state.currentBet + bet,
-    playerHand: { ...newHand1 },
-    playerHands: hands,
-    activeHandIndex: idx,
-    message: `Split again! Playing hand ${idx + 1} of ${hands.length}.`,
-    shoeSize: deck.size,
-    availableActions,
+    state: buildSplitTurnState(state, {
+      hands,
+      activeHandIndex: idx,
+      balance,
+      currentBet: state.currentBet + bet,
+      message: `Split again! Playing hand ${idx + 1} of ${hands.length}.`,
+      shoeSize: currentDeck.size,
+      availableActions,
+    }),
+    deck: currentDeck,
   };
 }
 
@@ -255,25 +253,25 @@ function advanceSplitHand(state, hands, currentIdx, deck, rules) {
   }
 
   const nextHand = hands[nextIdx];
-  const availableActions = getAvailableActions({
+  const availableActions = actionsForSplitHand({
     hand: nextHand,
     balance: state.balance,
-    bet: nextHand.bet,
+    hands,
     isFirstAction: true,
-    isSplitHand: true,
-    fromSplitAces: nextHand.fromSplitAces,
-    totalHands: hands.length,
     rules,
   });
 
   return {
-    ...state,
-    playerHand: { ...nextHand },
-    playerHands: hands,
-    activeHandIndex: nextIdx,
-    message: `Playing hand ${nextIdx + 1} of ${hands.length}.`,
-    shoeSize: deck.size,
-    availableActions,
+    state: buildSplitTurnState(state, {
+      hands,
+      activeHandIndex: nextIdx,
+      balance: state.balance,
+      currentBet: state.currentBet,
+      message: `Playing hand ${nextIdx + 1} of ${hands.length}.`,
+      shoeSize: deck.size,
+      availableActions,
+    }),
+    deck,
   };
 }
 
@@ -281,22 +279,10 @@ function advanceSplitHand(state, hands, currentIdx, deck, rules) {
  * All split hands are settled. Dealer plays and all hands are resolved.
  */
 function finishSplitRound(state, hands, deck, balance, rules) {
-  const allBusted = hands.every(h => h.busted);
+  const playerEntries = hands.map(h => ({ hand: { ...h, blackjack: false }, bet: h.bet }));
+  const { dealerHand, results, deck: newDeck } = runDealerAndResolve(state.dealerHand, playerEntries, deck, rules);
 
-  const dealerCards = revealDealerCards(state.dealerHand);
-  const dealerHand = allBusted
-    ? evaluateHand(dealerCards)
-    : playDealerTurn(dealerCards, deck, rules);
-
-  let totalPayout = 0;
-  const results = [];
-
-  for (const hand of hands) {
-    const playerEval = { ...hand, blackjack: false };
-    const { outcome, payout, message } = resolveRound(playerEval, dealerHand, hand.bet, rules);
-    totalPayout += payout;
-    results.push({ outcome, payout, message });
-  }
+  const totalPayout = results.reduce((sum, r) => sum + r.payout, 0);
 
   const summaries = results.map((r, i) => `Hand ${i + 1}: ${r.message}`);
   const overallMessage = summaries.join(' | ');
@@ -309,17 +295,15 @@ function finishSplitRound(state, hands, deck, balance, rules) {
   else overallOutcome = 'win';
 
   return {
-    ...state,
-    phase: PHASES.RESOLVED,
-    playerHand: { ...hands[0] },
-    playerHands: hands,
-    activeHandIndex: 0,
-    dealerHand: { ...dealerHand, hiddenCard: null },
-    balance: balance + totalPayout,
-    currentBet: hands.reduce((sum, h) => sum + h.bet, 0),
-    outcome: overallOutcome,
-    message: overallMessage,
-    shoeSize: deck.size,
-    availableActions: [],
+    state: buildSplitResolvedState(state, {
+      hands,
+      dealerHand,
+      balance: balance + totalPayout,
+      currentBet: hands.reduce((sum, h) => sum + h.bet, 0),
+      outcome: overallOutcome,
+      message: overallMessage,
+      shoeSize: newDeck.size,
+    }),
+    deck: newDeck,
   };
 }

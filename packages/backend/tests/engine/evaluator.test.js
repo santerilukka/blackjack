@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { cardValue, calculateTotal, evaluateHand } from '../../src/engine/evaluator.js';
-
-/** @param {string} rank @param {string} [suit='hearts'] */
-const card = (rank, suit = 'hearts') => ({ rank, suit });
+import { card } from '../helpers/testUtils.js';
 
 describe('cardValue', () => {
   it('returns 11 for Ace', () => {

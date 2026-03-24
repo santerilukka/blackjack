@@ -26,6 +26,9 @@ export function useGameState() {
   const hit = useCallback(wrapAsync(() => api.playerAction(ACTIONS.HIT)), [wrapAsync]);
   const stand = useCallback(wrapAsync(() => api.playerAction(ACTIONS.STAND)), [wrapAsync]);
   const double = useCallback(wrapAsync(() => api.playerAction(ACTIONS.DOUBLE)), [wrapAsync]);
+  const split = useCallback(wrapAsync(() => api.playerAction(ACTIONS.SPLIT)), [wrapAsync]);
+  const surrender = useCallback(wrapAsync(() => api.playerAction(ACTIONS.SURRENDER)), [wrapAsync]);
+  const insurance = useCallback(wrapAsync((accept) => api.insurance(accept)), [wrapAsync]);
   const newRound = useCallback(wrapAsync(api.newRound), [wrapAsync]);
 
   return {
@@ -38,6 +41,9 @@ export function useGameState() {
     hit,
     stand,
     double,
+    split,
+    surrender,
+    insurance,
     newRound,
   };
 }

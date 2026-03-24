@@ -3,20 +3,25 @@ import { evaluateHand } from './evaluator.js';
 
 /**
  * Play the dealer's turn to completion.
+ * Returns the final hand and the updated (immutable) deck.
  * @param {import('@blackjack/shared').Card[]} dealerCards
  * @param {import('./deck.js').Deck} deck
  * @param {import('@blackjack/shared').RuleConfig} [rules]
- * @returns {import('@blackjack/shared').Hand}
+ * @returns {{ hand: import('@blackjack/shared').Hand, deck: import('./deck.js').Deck }}
  */
 export function playDealerTurn(dealerCards, deck, rules = DEFAULT_RULES) {
-  let hand = evaluateHand(dealerCards);
+  const cards = [...dealerCards];
+  let hand = evaluateHand(cards);
+  let currentDeck = deck;
 
   while (dealerShouldHit(hand, rules)) {
-    dealerCards.push(deck.draw());
-    hand = evaluateHand(dealerCards);
+    const { card, deck: newDeck } = currentDeck.draw();
+    cards.push(card);
+    currentDeck = newDeck;
+    hand = evaluateHand(cards);
   }
 
-  return hand;
+  return { hand, deck: currentDeck };
 }
 
 /**

@@ -249,6 +249,17 @@ describe('full round lifecycle', () => {
 
     if (betRes.body.phase === PHASES.RESOLVED) {
       // Blackjack — skip to new round
+    } else if (betRes.body.phase === PHASES.INSURANCE) {
+      // Dealer shows Ace — decline insurance
+      const insuranceRes = await client.post('/api/insurance').send({ accept: false });
+      expect(insuranceRes.status).toBe(200);
+
+      if (insuranceRes.body.phase !== PHASES.RESOLVED) {
+        expect(insuranceRes.body.phase).toBe(PHASES.PLAYER_TURN);
+        const standRes = await client.post('/api/action').send({ action: ACTIONS.STAND });
+        expect(standRes.status).toBe(200);
+        expect(standRes.body.phase).toBe(PHASES.RESOLVED);
+      }
     } else {
       expect(betRes.body.phase).toBe(PHASES.PLAYER_TURN);
 

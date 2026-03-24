@@ -40,6 +40,22 @@ export function resolveKeyAction(key, phase, availableActions) {
     if (key === SHORTCUTS.DOUBLE.key && availableActions.includes(ACTIONS.DOUBLE)) {
       return { type: 'double' };
     }
+    if (key === SHORTCUTS.SPLIT.key && availableActions.includes(ACTIONS.SPLIT)) {
+      return { type: 'split' };
+    }
+    if (key === SHORTCUTS.SURRENDER.key && availableActions.includes(ACTIONS.SURRENDER)) {
+      return { type: 'surrender' };
+    }
+  }
+
+  // Insurance phase
+  if (phase === PHASES.INSURANCE) {
+    if (key === SHORTCUTS.INSURANCE_YES.key) {
+      return { type: 'insuranceYes' };
+    }
+    if (key === SHORTCUTS.INSURANCE_NO.key) {
+      return { type: 'insuranceNo' };
+    }
   }
 
   // Resolved phase

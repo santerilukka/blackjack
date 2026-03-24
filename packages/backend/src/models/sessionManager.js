@@ -41,11 +41,15 @@ export function getSession(sessionId) {
  * Update game state for a session.
  * @param {string} sessionId
  * @param {import('@blackjack/shared').GameState} state
+ * @param {import('../engine/deck.js').Deck} [deck] - Optional updated deck (for immutable deck threading)
  */
-export function updateSession(sessionId, state) {
+export function updateSession(sessionId, state, deck) {
   const session = sessions.get(sessionId);
   if (session) {
     session.state = state;
+    if (deck !== undefined) {
+      session.deck = deck;
+    }
   }
 }
 

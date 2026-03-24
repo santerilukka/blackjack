@@ -45,3 +45,7 @@ export function playerAction(action) {
 export function newRound() {
   return request('/new-round', { method: 'POST' });
 }
+
+export function insurance(accept) {
+  return request('/insurance', { method: 'POST', body: JSON.stringify({ accept }) });
+}

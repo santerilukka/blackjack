@@ -2,7 +2,8 @@ import { DEFAULT_RULES } from '@blackjack/shared';
 import { createShoe, drawCard } from './shoe.js';
 
 /**
- * Manages the shoe and discard pile as a single unit.
+ * Immutable shoe + discard pile manager.
+ * All mutating operations return a new Deck instance.
  */
 export class Deck {
   /**
@@ -24,11 +25,15 @@ export class Deck {
   }
 
   /**
-   * Draw a card from the shoe. Reshuffles if empty.
-   * @returns {import('@blackjack/shared').Card}
+   * Draw a card from the shoe. Returns the card and a new Deck.
+   * The original Deck is not mutated.
+   * @returns {{ card: import('@blackjack/shared').Card, deck: Deck }}
    */
   draw() {
-    return drawCard(this.shoe, this.discard);
+    const newShoe = [...this.shoe];
+    const newDiscard = [...this.discard];
+    const card = drawCard(newShoe, newDiscard);
+    return { card, deck: new Deck(newShoe, newDiscard) };
   }
 
   /** @type {number} */
@@ -37,12 +42,12 @@ export class Deck {
   }
 
   /**
-   * Collect cards into the discard pile.
+   * Collect cards into the discard pile. Returns a new Deck.
    * @param {import('@blackjack/shared').Card[]} cards
+   * @returns {Deck}
    */
   collect(cards) {
-    if (cards.length > 0) {
-      this.discard.push(...cards);
-    }
+    if (cards.length === 0) return this;
+    return new Deck(this.shoe, [...this.discard, ...cards]);
   }
 }

@@ -3,7 +3,8 @@ import { createCardSprite } from './CardSprite.js';
 import { AnimationQueue } from './AnimationQueue.js';
 import { BetSpot } from './BetSpot.js';
 import { StackRenderer } from './StackRenderer.js';
-import { diffGameState, formatHandTotal, formatDealerTotal } from './tableDiff.js';
+import { diffGameState } from './tableDiff.js';
+import { executeCommands } from './commandExecutor.js';
 
 const CARD_HEIGHT = 130;
 const CARD_GAP = 12;
@@ -19,6 +20,7 @@ const BET_CIRCLE_Y = 370;
 
 /**
  * TableScene manages the visual layout of the blackjack table on a PixiJS stage.
+ * Implements the Renderer interface consumed by commandExecutor.
  */
 export class TableScene {
   /**
@@ -109,56 +111,99 @@ export class TableScene {
     this.root.addChildAt(g, 0);
   }
 
+  // --- Renderer interface implementation ---
+
+  /** @param {Array<{rank: string, suit: string}>} cards */
+  async redrawDealerHand(cards, showHidden) {
+    await this._renderHand(this.dealerCards, cards, showHidden);
+  }
+
+  /** @param {Array<{rank: string, suit: string}>} cards */
+  async addDealerCards(cards, addHidden) {
+    await this._addCards(this.dealerCards, cards, addHidden);
+  }
+
+  /** @param {Array<{rank: string, suit: string}>} cards */
+  async addPlayerCards(cards, addHidden) {
+    await this._addCards(this.playerCards, cards, addHidden);
+  }
+
+  /** @param {string} text */
+  updatePlayerTotal(text) {
+    this.playerTotal.text = text;
+  }
+
+  /** @param {string} text */
+  updateDealerTotal(text) {
+    this.dealerTotal.text = text;
+  }
+
+  /** @param {number} amount */
+  updateBetSpot(amount) {
+    this.betSpot.update(amount);
+  }
+
+  /** @param {number} shoeSize @param {number} cardsOnTable */
+  updateStacks(shoeSize, cardsOnTable) {
+    this._updateStacksInternal(shoeSize, cardsOnTable);
+  }
+
+  // --- Scene orchestration ---
+
   /**
    * Sync the scene with the current game state.
+   * Uses diffGameState to compute commands, then delegates to executeCommands.
    * @param {object} gameState
    */
   async update(gameState) {
     if (!gameState) return;
 
-    const { dealerCmd, playerCmd, showDealerHidden, newRenderedState } =
-      diffGameState(this._renderedState, gameState);
+    const diff = diffGameState(this._renderedState, gameState);
+    const { dealerCmd, playerCmd, showDealerHidden, newRenderedState } = diff;
 
-    // Execute rendering commands
-    if (dealerCmd) {
-      if (dealerCmd.type === 'redraw') {
-        this.animationQueue.enqueue(() => this._renderHand(
-          this.dealerCards, dealerCmd.cards, dealerCmd.showHidden
-        ));
-      } else {
-        this.animationQueue.enqueue(() => this._addCards(
-          this.dealerCards, dealerCmd.cards, dealerCmd.addHidden
-        ));
-      }
-    }
-
-    if (playerCmd) {
-      this.animationQueue.enqueue(() => this._addCards(
-        this.playerCards, playerCmd.cards, playerCmd.addHidden
-      ));
+    // Enqueue rendering via animation queue, delegating to executeCommands
+    const renderer = this;
+    if (dealerCmd || playerCmd) {
+      this.animationQueue.enqueue(async () => {
+        await executeCommands({ dealerCmd, playerCmd, showDealerHidden, gameState }, renderer);
+      });
+    } else {
+      // No card changes, just update labels/stacks synchronously
+      await executeCommands({ dealerCmd: null, playerCmd: null, showDealerHidden, gameState }, renderer);
     }
 
     this._renderedState = newRenderedState;
-
-    // Update totals
-    this.playerTotal.text = formatHandTotal(gameState.playerHand);
-    this.dealerTotal.text = formatDealerTotal(gameState.dealerHand, gameState.phase);
-
-    // Update betting spot
-    this.betSpot.update(gameState.currentBet || 0);
-
-    // Update shoe and discard stacks
-    const cardsOnTable = gameState.dealerHand.cards.length + gameState.playerHand.cards.length +
-      (showDealerHidden ? 1 : 0);
-    this._updateStacks(gameState.shoeSize, cardsOnTable);
   }
 
   /**
-   * Update shoe and discard pile visuals.
-   * @param {number} shoeSize
-   * @param {number} cardsOnTable
+   * Remove all cards from the scene (e.g. new round).
+   * @param {number} [shoeSize]
    */
-  async _updateStacks(shoeSize, cardsOnTable) {
+  clear(shoeSize) {
+    this.animationQueue.clear();
+    this.dealerCards.removeChildren();
+    this.playerCards.removeChildren();
+    this._renderedState = { dealerCards: [], playerCards: [], phase: null };
+    this.betSpot.clear();
+    this.dealerTotal.text = '';
+    this.playerTotal.text = '';
+
+    if (shoeSize != null) {
+      this._updateStacksInternal(shoeSize, 0);
+    }
+  }
+
+  destroy() {
+    this.animationQueue.clear();
+    this.root.destroy({ children: true });
+  }
+
+  // --- Internal rendering helpers (PixiJS-specific) ---
+
+  /**
+   * Update shoe and discard pile visuals.
+   */
+  _updateStacksInternal(shoeSize, cardsOnTable) {
     if (this._totalCards === 0 || shoeSize > this._shoeSize) {
       this._totalCards = shoeSize + cardsOnTable;
     }
@@ -233,29 +278,6 @@ export class TableScene {
       container.addChild(hidden);
       await fadeIn(hidden, this.app);
     }
-  }
-
-  /**
-   * Remove all cards from the scene (e.g. new round).
-   * @param {number} [shoeSize]
-   */
-  clear(shoeSize) {
-    this.animationQueue.clear();
-    this.dealerCards.removeChildren();
-    this.playerCards.removeChildren();
-    this._renderedState = { dealerCards: [], playerCards: [], phase: null };
-    this.betSpot.clear();
-    this.dealerTotal.text = '';
-    this.playerTotal.text = '';
-
-    if (shoeSize != null) {
-      this._updateStacks(shoeSize, 0);
-    }
-  }
-
-  destroy() {
-    this.animationQueue.clear();
-    this.root.destroy({ children: true });
   }
 }
 

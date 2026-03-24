@@ -18,6 +18,9 @@ export default function GamePage({ user, onLogout }) {
     hit,
     stand,
     double,
+    split,
+    surrender,
+    insurance,
     newRound,
   } = useGameState();
 
@@ -57,13 +60,17 @@ export default function GamePage({ user, onLogout }) {
         case 'hit': hit(); break;
         case 'stand': stand(); break;
         case 'double': double(); break;
+        case 'split': split(); break;
+        case 'surrender': surrender(); break;
+        case 'insuranceYes': insurance(true); break;
+        case 'insuranceNo': insurance(false); break;
         case 'newRound': newRound(); break;
       }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, loading, hit, stand, double, newRound, toggleMenu, doBet]);
+  }, [gameState, loading, hit, stand, double, split, surrender, insurance, newRound, toggleMenu, doBet]);
 
   if (!gameState) {
     return <div className="game-page">Loading...</div>;
@@ -72,6 +79,7 @@ export default function GamePage({ user, onLogout }) {
   const { phase, balance, currentBet, message } = gameState;
   const isBetting = phase === PHASES.BETTING;
   const isPlayerTurn = phase === PHASES.PLAYER_TURN;
+  const isInsurance = phase === PHASES.INSURANCE;
   const isResolved = phase === PHASES.RESOLVED;
 
   return (
@@ -116,9 +124,25 @@ export default function GamePage({ user, onLogout }) {
           onHit={hit}
           onStand={stand}
           onDouble={double}
+          onSplit={split}
+          onSurrender={surrender}
           disabled={loading || !isPlayerTurn}
           availableActions={gameState.availableActions}
         />
+      </div>
+
+      <div
+        className="insurance-wrapper"
+        style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
+      >
+        <div className="insurance-panel">
+          <button onClick={() => insurance(true)} disabled={loading || !isInsurance}>
+            Yes <kbd>Y</kbd>
+          </button>
+          <button onClick={() => insurance(false)} disabled={loading || !isInsurance}>
+            No <kbd>N</kbd>
+          </button>
+        </div>
       </div>
 
       <div

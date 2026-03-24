@@ -1,7 +1,9 @@
 import { ACTIONS, SHORTCUTS } from '@blackjack/shared';
 
-export default function ActionBar({ onHit, onStand, onDouble, disabled, availableActions = [] }) {
+export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrender, disabled, availableActions = [] }) {
   const canDouble = availableActions.includes(ACTIONS.DOUBLE);
+  const canSplit = availableActions.includes(ACTIONS.SPLIT);
+  const canSurrender = availableActions.includes(ACTIONS.SURRENDER);
 
   return (
     <div className="action-bar">
@@ -13,6 +15,22 @@ export default function ActionBar({ onHit, onStand, onDouble, disabled, availabl
         style={{ opacity: canDouble ? 1 : 0.4 }}
       >
         Double <kbd>{SHORTCUTS.DOUBLE.label}</kbd>
+      </button>
+      <button
+        className="split-btn"
+        onClick={onSplit}
+        disabled={disabled || !canSplit}
+        style={{ opacity: canSplit ? 1 : 0.4 }}
+      >
+        Split <kbd>{SHORTCUTS.SPLIT.label}</kbd>
+      </button>
+      <button
+        className="surrender-btn"
+        onClick={onSurrender}
+        disabled={disabled || !canSurrender}
+        style={{ opacity: canSurrender ? 1 : 0.4 }}
+      >
+        Surrender <kbd>{SHORTCUTS.SURRENDER.label}</kbd>
       </button>
       <button onClick={onStand} disabled={disabled}>Stand <kbd>{SHORTCUTS.STAND.label}</kbd></button>
     </div>

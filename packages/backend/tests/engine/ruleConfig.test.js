@@ -7,13 +7,7 @@ import { placeBet } from '../../src/engine/round.js';
 import { executeAction } from '../../src/engine/actions.js';
 import { evaluateHand } from '../../src/engine/evaluator.js';
 import { ACTIONS, PHASES, OUTCOMES, createDefaultGameState } from '@blackjack/shared';
-
-const card = (rank, suit = 'hearts') => ({ rank, suit });
-
-function buildShoe(...dealOrder) {
-  const filler = Array(300).fill(card('2', 'clubs'));
-  return [...filler, ...dealOrder.reverse()];
-}
+import { card, buildShoe } from '../helpers/testUtils.js';
 
 describe('DEFAULT_RULES', () => {
   it('has correct default values', () => {
@@ -84,7 +78,7 @@ describe('dealer_hits_soft_17', () => {
     const rules = createRules({ dealer_hits_soft_17: true });
     const dealerCards = [card('A'), card('6')]; // soft 17
     const deck = new Deck(buildShoe(card('3'))); // draws 3 → soft 20
-    const result = playDealerTurn(dealerCards, deck, rules);
+    const { hand: result } = playDealerTurn(dealerCards, deck, rules);
     expect(result.total).toBe(20);
   });
 
@@ -92,7 +86,7 @@ describe('dealer_hits_soft_17', () => {
     const rules = createRules({ dealer_hits_soft_17: false });
     const dealerCards = [card('A'), card('6')]; // soft 17
     const deck = new Deck(buildShoe(card('3')));
-    const result = playDealerTurn(dealerCards, deck, rules);
+    const { hand: result } = playDealerTurn(dealerCards, deck, rules);
     expect(result.total).toBe(17);
     expect(result.cards).toHaveLength(2); // no extra cards drawn
   });
@@ -144,7 +138,7 @@ describe('double_down_on restrictions', () => {
     // Player: 8+9=17
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
     const rules = createRules({ double_down_on: 'any_two_cards' });
-    const result = placeBet(state, deck, 100, rules);
+    const { state: result } = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -154,7 +148,7 @@ describe('double_down_on restrictions', () => {
     // Player: 5+6=11
     const deck = new Deck(buildShoe(card('5'), card('7'), card('6'), card('K')));
     const rules = createRules({ double_down_on: '9_10_11' });
-    const result = placeBet(state, deck, 100, rules);
+    const { state: result } = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -164,7 +158,7 @@ describe('double_down_on restrictions', () => {
     // Player: 5+7=12
     const deck = new Deck(buildShoe(card('5'), card('3'), card('7'), card('K')));
     const rules = createRules({ double_down_on: '9_10_11' });
-    const result = placeBet(state, deck, 100, rules);
+    const { state: result } = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).not.toContain(ACTIONS.DOUBLE);
   });
@@ -174,7 +168,7 @@ describe('double_down_on restrictions', () => {
     // Player: 4+6=10
     const deck = new Deck(buildShoe(card('4'), card('3'), card('6'), card('K')));
     const rules = createRules({ double_down_on: '10_11' });
-    const result = placeBet(state, deck, 100, rules);
+    const { state: result } = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
   });
@@ -184,7 +178,7 @@ describe('double_down_on restrictions', () => {
     // Player: 4+5=9
     const deck = new Deck(buildShoe(card('4'), card('3'), card('5'), card('K')));
     const rules = createRules({ double_down_on: '10_11' });
-    const result = placeBet(state, deck, 100, rules);
+    const { state: result } = placeBet(state, deck, 100, rules);
 
     expect(result.availableActions).not.toContain(ACTIONS.DOUBLE);
   });

@@ -3,25 +3,14 @@ import { Deck } from '../../src/engine/deck.js';
 import { placeBet, startNewRound } from '../../src/engine/round.js';
 import { PHASES, ACTIONS, OUTCOMES, DEFAULT_BALANCE } from '@blackjack/shared';
 import { createDefaultGameState } from '@blackjack/shared';
-
-const card = (rank, suit = 'hearts') => ({ rank, suit });
-
-/**
- * Build a deterministic shoe. drawCard pops from end, so reverse the desired deal order.
- * The shoe also needs enough cards to avoid the reshuffle threshold.
- * We pad with filler cards.
- */
-function buildShoe(...dealOrder) {
-  const filler = Array(300).fill(card('2', 'clubs'));
-  return [...filler, ...dealOrder.reverse()];
-}
+import { card, buildShoe } from '../helpers/testUtils.js';
 
 describe('placeBet', () => {
   it('deals cards in alternating order: player, dealer, player, dealer', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
 
     expect(result.playerHand.cards).toHaveLength(2);
     expect(result.playerHand.cards[0]).toEqual(card('8'));
@@ -33,30 +22,29 @@ describe('placeBet', () => {
 
   it('deducts bet from balance', () => {
     const state = createDefaultGameState('test-session');
-    // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
     expect(result.balance).toBe(DEFAULT_BALANCE - 100);
   });
 
   it('sets phase to playerTurn for normal hand', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
   });
 
   it('sets currentBet', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 50);
+    const { state: result } = placeBet(state, deck, 50);
     expect(result.currentBet).toBe(50);
   });
 
   it('provides hit, stand, double, and surrender as available actions when balance allows', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
     expect(result.availableActions).toContain(ACTIONS.HIT);
     expect(result.availableActions).toContain(ACTIONS.STAND);
     expect(result.availableActions).toContain(ACTIONS.DOUBLE);
@@ -66,7 +54,7 @@ describe('placeBet', () => {
   it('does not offer double when remaining balance is less than bet', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, DEFAULT_BALANCE);
+    const { state: result } = placeBet(state, deck, DEFAULT_BALANCE);
     expect(result.availableActions).toContain(ACTIONS.HIT);
     expect(result.availableActions).toContain(ACTIONS.STAND);
     expect(result.availableActions).toContain(ACTIONS.SURRENDER);
@@ -76,7 +64,7 @@ describe('placeBet', () => {
   it('evaluates player hand total', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
     expect(result.playerHand.total).toBe(17);
   });
 
@@ -84,7 +72,7 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const deck = new Deck(buildShoe(card('A'), card('5'), card('K'), card('7')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.BLACKJACK);
@@ -100,7 +88,7 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const deck = new Deck(buildShoe(card('A'), card('Q'), card('K'), card('A', 'spades')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.PUSH);
@@ -111,9 +99,8 @@ describe('placeBet', () => {
   it('goes to insurance phase when dealer shows Ace', () => {
     const state = createDefaultGameState('test-session');
     // Player gets 8+9=17, dealer gets A+K=blackjack
-    // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const deck = new Deck(buildShoe(card('8'), card('A'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
 
     // Dealer Ace → insurance phase (peek happens after insurance decision)
     expect(result.phase).toBe(PHASES.INSURANCE);
@@ -128,7 +115,7 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     // Player gets 8+9=17, dealer gets K+A=blackjack
     const deck = new Deck(buildShoe(card('8'), card('K'), card('9'), card('A')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.RESOLVED);
     expect(result.outcome).toBe(OUTCOMES.LOSE);
@@ -140,9 +127,8 @@ describe('placeBet', () => {
   it('does not peek when dealer face-up card is not Ace or 10-value', () => {
     const state = createDefaultGameState('test-session');
     // Dealer face-up is 5 — no peek even though hidden card is A
-    // Deal order: player1, dealerFaceUp, player2, dealerHidden
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('A')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
 
     expect(result.phase).toBe(PHASES.PLAYER_TURN);
     expect(result.availableActions).toContain(ACTIONS.HIT);
@@ -153,15 +139,23 @@ describe('placeBet', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
     const initialSize = deck.size;
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
     expect(result.shoeSize).toBe(initialSize - 4);
   });
 
   it('preserves sessionId', () => {
     const state = createDefaultGameState('my-session');
     const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
-    const result = placeBet(state, deck, 100);
+    const { state: result } = placeBet(state, deck, 100);
     expect(result.sessionId).toBe('my-session');
+  });
+
+  it('does not mutate the original deck', () => {
+    const state = createDefaultGameState('test-session');
+    const deck = new Deck(buildShoe(card('8'), card('5'), card('9'), card('K')));
+    const originalSize = deck.size;
+    placeBet(state, deck, 100);
+    expect(deck.size).toBe(originalSize);
   });
 });
 
@@ -175,7 +169,7 @@ describe('startNewRound', () => {
       outcome: OUTCOMES.WIN,
     };
     const deck = new Deck(Array(300).fill(card('2')));
-    const result = startNewRound(state, deck);
+    const { state: result } = startNewRound(state, deck);
     expect(result.phase).toBe(PHASES.BETTING);
   });
 
@@ -186,7 +180,7 @@ describe('startNewRound', () => {
       balance: 750,
     };
     const deck = new Deck(Array(300).fill(card('2')));
-    const result = startNewRound(state, deck);
+    const { state: result } = startNewRound(state, deck);
     expect(result.balance).toBe(750);
   });
 
@@ -196,7 +190,7 @@ describe('startNewRound', () => {
       playerHand: { cards: [card('K')], total: 10, soft: false, busted: false, blackjack: false },
     };
     const deck = new Deck(Array(300).fill(card('2')));
-    const result = startNewRound(state, deck);
+    const { state: result } = startNewRound(state, deck);
     expect(result.playerHand.cards).toEqual([]);
     expect(result.playerHand.total).toBe(0);
     expect(result.dealerHand.cards).toEqual([]);
@@ -210,7 +204,7 @@ describe('startNewRound', () => {
       currentBet: 100,
     };
     const deck = new Deck(Array(300).fill(card('2')));
-    const result = startNewRound(state, deck);
+    const { state: result } = startNewRound(state, deck);
     expect(result.outcome).toBeNull();
     expect(result.currentBet).toBe(0);
     expect(result.availableActions).toEqual([]);
@@ -219,14 +213,14 @@ describe('startNewRound', () => {
   it('updates shoe size', () => {
     const state = createDefaultGameState('test-session');
     const deck = new Deck(Array(200).fill(card('2')));
-    const result = startNewRound(state, deck);
+    const { state: result } = startNewRound(state, deck);
     expect(result.shoeSize).toBe(200);
   });
 
   it('preserves sessionId', () => {
     const state = createDefaultGameState('keep-this-id');
     const deck = new Deck(Array(300).fill(card('2')));
-    const result = startNewRound(state, deck);
+    const { state: result } = startNewRound(state, deck);
     expect(result.sessionId).toBe('keep-this-id');
   });
 });

@@ -77,6 +77,33 @@ export function canDoubleOnTotal(total, restriction) {
  * @param {import('@blackjack/shared').RuleConfig} rules
  * @returns {boolean}
  */
+/**
+ * Get available actions for a normal (non-split) hand.
+ * @param {{ hand: object, balance: number, bet: number, isFirstAction: boolean, rules?: object }} params
+ * @returns {string[]}
+ */
+export function actionsForHand({ hand, balance, bet, isFirstAction, rules = DEFAULT_RULES }) {
+  return getAvailableActions({ hand, balance, bet, isFirstAction, rules });
+}
+
+/**
+ * Get available actions for a split hand.
+ * @param {{ hand: object, balance: number, hands: object[], isFirstAction: boolean, rules?: object }} params
+ * @returns {string[]}
+ */
+export function actionsForSplitHand({ hand, balance, hands, isFirstAction, rules = DEFAULT_RULES }) {
+  return getAvailableActions({
+    hand,
+    balance,
+    bet: hand.bet,
+    isFirstAction,
+    isSplitHand: true,
+    fromSplitAces: hand.fromSplitAces,
+    totalHands: hands.length,
+    rules,
+  });
+}
+
 export function canSplitHand(cards, rules = DEFAULT_RULES) {
   if (cards.length !== 2) return false;
   if (rules.split_requires_identical_rank) {
