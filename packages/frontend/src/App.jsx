@@ -12,7 +12,9 @@ function App() {
   useEffect(() => {
     getMe()
       .then(setUser)
-      .catch(() => {})
+      .catch((err) => {
+        if (err.status !== 401) console.error('Failed to check session:', err);
+      })
       .finally(() => setChecking(false));
   }, []);
 

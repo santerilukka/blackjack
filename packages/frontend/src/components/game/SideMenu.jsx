@@ -75,8 +75,8 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
           <table className="shortcut-table">
             <tbody>
               <tr><td><kbd>1</kbd>-<kbd>5</kbd></td><td>{CHIP_SHORTCUT_DESCRIPTION}</td></tr>
-              {Object.values(SHORTCUTS).map(({ label, description }) => (
-                <tr key={label}><td><kbd>{label}</kbd></td><td>{description}</td></tr>
+              {Object.entries(SHORTCUTS).map(([id, { label, description }]) => (
+                <tr key={id}><td><kbd>{label}</kbd></td><td>{description}</td></tr>
               ))}
             </tbody>
           </table>
