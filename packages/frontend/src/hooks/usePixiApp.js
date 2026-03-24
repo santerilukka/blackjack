@@ -8,7 +8,7 @@ import { Application } from 'pixi.js';
  * @param {{ width?: number, height?: number, background?: string }} options
  * @returns {{ canvasRef: React.RefObject, app: Application | null, ready: boolean }}
  */
-export function usePixiApp({ width = 800, height = 500, background = '#2d7a3e' } = {}) {
+export function usePixiApp({ width = 800, height = 500, background = '#0a1f11' } = {}) {
   const canvasRef = useRef(null);
   const appRef = useRef(null);
   const [ready, setReady] = useState(false);

@@ -5,18 +5,30 @@ import { BetSpot } from './BetSpot.js';
 import { StackRenderer } from './StackRenderer.js';
 import { diffGameState } from './tableDiff.js';
 import { executeCommands } from './commandExecutor.js';
+import { tween } from './tween.js';
+import { SeatMarker, computeSeatPositions } from './SeatMarker.js';
 
-const CARD_HEIGHT = 130;
+const CARD_HEIGHT = 110;
 const CARD_GAP = 12;
-const DEALER_Y = 30;
-const PLAYER_Y = 290;
-const LABEL_OFFSET_Y = -5;
+const STACK_CARD_HEIGHT = 80;
 
-const STACK_CARD_HEIGHT = 100;
-
-// Betting spot position
-const BET_CIRCLE_X = 50;
-const BET_CIRCLE_Y = 370;
+/**
+ * All position constants for the table layout.
+ * Canvas coordinate system is always 800x500.
+ * Coordinates follow VISUAL_DESIGN_SPEC.md Section 2.
+ */
+const LAYOUT = {
+  dealer: { cardsX: 400, cardsY: 140, labelX: 400, labelY: 72 },
+  player: { cardsX: 400, cardsY: 310, labelX: 400, labelY: 290 },
+  bet:    { x: 400, y: 435 },
+  shoe:   { x: 720, y: 70 },
+  discard: { x: 80, y: 70 },
+  // Half-ellipse parameters for the table shape
+  // Dealer edge: (40, 60) to (760, 60), player arc apex at (400, 460)
+  table: { cx: 400, topY: 60, rx: 360, ry: 400 },
+  // Half-ellipse parameters for seat distribution
+  seats: { cx: 400, cy: 140, rx: 300, ry: 280 },
+};
 
 /**
  * TableScene manages the visual layout of the blackjack table on a PixiJS stage.
@@ -25,8 +37,9 @@ const BET_CIRCLE_Y = 370;
 export class TableScene {
   /**
    * @param {import('pixi.js').Application} app
+   * @param {{ npcCount?: number }} [options]
    */
-  constructor(app) {
+  constructor(app, { npcCount = 0 } = {}) {
     this.app = app;
     this.root = new Container();
     app.stage.addChild(this.root);
@@ -36,57 +49,46 @@ export class TableScene {
     // Felt background
     this._drawFelt();
 
-    // Labels
-    this.dealerLabel = new Text({ text: 'Dealer', style: { fill: '#ffffff', fontSize: 18, fontFamily: 'sans-serif' } });
-    this.dealerLabel.x = 20;
-    this.dealerLabel.y = DEALER_Y + LABEL_OFFSET_Y;
-    this.root.addChild(this.dealerLabel);
+    // Seat markers (NPC placeholders + player seat)
+    this._seatMarkers = [];
+    this._drawSeats(npcCount);
 
-    this.dealerTotal = new Text({ text: '', style: { fill: '#ffd700', fontSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' } });
-    this.dealerTotal.x = 100;
-    this.dealerTotal.y = DEALER_Y + LABEL_OFFSET_Y;
+    // Hand total badges (pill-shaped, per spec Section 3.5)
+    this.dealerTotal = this._createTotalBadge(LAYOUT.dealer.cardsX, LAYOUT.dealer.cardsY - 20);
     this.root.addChild(this.dealerTotal);
 
-    this.playerLabel = new Text({ text: 'Player', style: { fill: '#ffffff', fontSize: 18, fontFamily: 'sans-serif' } });
-    this.playerLabel.x = 20;
-    this.playerLabel.y = PLAYER_Y + LABEL_OFFSET_Y;
-    this.root.addChild(this.playerLabel);
-
-    this.playerTotal = new Text({ text: '', style: { fill: '#ffd700', fontSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' } });
-    this.playerTotal.x = 100;
-    this.playerTotal.y = PLAYER_Y + LABEL_OFFSET_Y;
+    this.playerTotal = this._createTotalBadge(LAYOUT.player.cardsX, LAYOUT.player.cardsY + CARD_HEIGHT + 12);
     this.root.addChild(this.playerTotal);
 
     // Card containers
     this.dealerCards = new Container();
-    this.dealerCards.x = 100;
-    this.dealerCards.y = DEALER_Y + 20;
+    this.dealerCards.x = LAYOUT.dealer.cardsX;
+    this.dealerCards.y = LAYOUT.dealer.cardsY;
     this.root.addChild(this.dealerCards);
 
     this.playerCards = new Container();
-    this.playerCards.x = 100;
-    this.playerCards.y = PLAYER_Y + 20;
+    this.playerCards.x = LAYOUT.player.cardsX;
+    this.playerCards.y = LAYOUT.player.cardsY;
     this.root.addChild(this.playerCards);
 
     // Shoe stack
-    const shoeX = this.app.screen.width - 120;
     this.shoeStack = new StackRenderer(
-      shoeX, DEALER_Y + 20,
-      shoeX + 35, DEALER_Y + 20 + STACK_CARD_HEIGHT + 8,
+      LAYOUT.shoe.x, LAYOUT.shoe.y,
+      LAYOUT.shoe.x + 35, LAYOUT.shoe.y + STACK_CARD_HEIGHT + 8,
     );
     this.root.addChild(this.shoeStack.container);
     this.root.addChild(this.shoeStack.label);
 
     // Discard stack
     this.discardStack = new StackRenderer(
-      shoeX, PLAYER_Y + 20,
-      shoeX + 35, PLAYER_Y + 20 + STACK_CARD_HEIGHT + 8,
+      LAYOUT.discard.x, LAYOUT.discard.y,
+      LAYOUT.discard.x + 35, LAYOUT.discard.y + STACK_CARD_HEIGHT + 8,
     );
     this.root.addChild(this.discardStack.container);
     this.root.addChild(this.discardStack.label);
 
     // Betting spot
-    this.betSpot = new BetSpot(BET_CIRCLE_X, BET_CIRCLE_Y);
+    this.betSpot = new BetSpot(LAYOUT.bet.x, LAYOUT.bet.y);
     this.root.addChild(this.betSpot.container);
 
     /** Track what's currently rendered to diff against new state */
@@ -96,19 +98,232 @@ export class TableScene {
     this._discardCount = 0;
   }
 
+  /**
+   * Helper to trace the semi-circular table path on a Graphics context.
+   * @param {Graphics} g
+   * @param {number} cx @param {number} topY @param {number} rx @param {number} ry
+   */
+  _traceFeltPath(g, cx, topY, rx, ry) {
+    const leftX = cx - rx;
+    const rightX = cx + rx;
+    g.moveTo(leftX, topY);
+    g.lineTo(rightX, topY);
+    g.quadraticCurveTo(rightX + 20, topY + ry * 0.6, cx, topY + ry);
+    g.quadraticCurveTo(leftX - 20, topY + ry * 0.6, leftX, topY);
+    g.closePath();
+  }
+
+  /**
+   * Draw the semi-circular table felt per VISUAL_DESIGN_SPEC.md Section 1.
+   * Layers: background → outer rim → felt fill → inner gold line → printed text.
+   */
   _drawFelt() {
+    const { cx, topY, rx, ry } = LAYOUT.table;
+    const W = this.app.screen.width;
+    const H = this.app.screen.height;
+
+    // --- Background outside felt ---
+    const bg = new Graphics();
+    bg.rect(0, 0, W, H);
+    bg.fill('#0a1f11');
+    this.root.addChildAt(bg, 0);
+
+    // --- Felt fill ---
+    const felt = new Graphics();
+    this._traceFeltPath(felt, cx, topY, rx, ry);
+    felt.fill('#1a5c2a');
+    this.root.addChild(felt);
+
+    // --- Outer rim stroke (simulates wooden rail) ---
+    const rim = new Graphics();
+    this._traceFeltPath(rim, cx, topY, rx, ry);
+    rim.stroke({ color: '#0d3318', width: 6 });
+    this.root.addChild(rim);
+
+    // --- Inner gold decorative line (inset 12px) ---
+    const inset = 12;
+    const irx = rx - inset;
+    const iry = ry - inset;
+    const itopY = topY + inset;
+    const gold = new Graphics();
+    this._traceFeltPath(gold, cx, itopY, irx, iry);
+    gold.stroke({ color: 'rgba(255, 215, 0, 0.35)', width: 2 });
+    this.root.addChild(gold);
+
+    // --- Printed text on felt ---
+    // "BLACKJACK PAYS 3 TO 2"
+    const bjText = new Text({
+      text: 'BLACKJACK PAYS 3 TO 2',
+      style: {
+        fill: 'rgba(255, 215, 0, 0.30)',
+        fontSize: 16,
+        fontFamily: 'Georgia, serif',
+        fontWeight: 'bold',
+        letterSpacing: 3,
+      },
+    });
+    bjText.anchor = { x: 0.5, y: 0.5 };
+    bjText.x = 400;
+    bjText.y = 130;
+    this.root.addChild(bjText);
+
+    // "INSURANCE PAYS 2 TO 1"
+    const insText = new Text({
+      text: 'INSURANCE PAYS 2 TO 1',
+      style: {
+        fill: 'rgba(255, 215, 0, 0.22)',
+        fontSize: 11,
+        fontFamily: 'Georgia, serif',
+        fontWeight: 'bold',
+        letterSpacing: 2,
+      },
+    });
+    insText.anchor = { x: 0.5, y: 0.5 };
+    insText.x = 400;
+    insText.y = 185;
+    this.root.addChild(insText);
+
+    // "DEALER"
+    const dealerText = new Text({
+      text: 'DEALER',
+      style: {
+        fill: 'rgba(255, 255, 255, 0.20)',
+        fontSize: 11,
+        fontFamily: 'sans-serif',
+        fontWeight: 'bold',
+        letterSpacing: 4,
+      },
+    });
+    dealerText.anchor = { x: 0.5, y: 0.5 };
+    dealerText.x = 400;
+    dealerText.y = 72;
+    this.root.addChild(dealerText);
+
+    // --- 7 Betting circle markings along the arc ---
+    this._drawBettingCircles();
+  }
+
+  /**
+   * Draw the 7 decorative betting circles along the player arc.
+   * Per VISUAL_DESIGN_SPEC.md Section 2.1.
+   */
+  _drawBettingCircles() {
+    /** @type {Array<{x: number, y: number, isPlayer: boolean}>} */
+    const seats = [
+      { x: 115, y: 330, isPlayer: false },
+      { x: 185, y: 385, isPlayer: false },
+      { x: 275, y: 420, isPlayer: false },
+      { x: 400, y: 435, isPlayer: true },
+      { x: 525, y: 420, isPlayer: false },
+      { x: 615, y: 385, isPlayer: false },
+      { x: 685, y: 330, isPlayer: false },
+    ];
+
     const g = new Graphics();
-    g.roundRect(0, 0, this.app.screen.width, this.app.screen.height, 16);
-    g.fill('#2d7a3e');
-    g.roundRect(4, 4, this.app.screen.width - 8, this.app.screen.height - 8, 14);
-    g.stroke({ color: '#1a5c2a', width: 3 });
-    const midY = this.app.screen.height / 2;
-    g.moveTo(40, midY);
-    g.lineTo(this.app.screen.width - 40, midY);
-    g.stroke({ color: 'rgba(255,255,255,0.15)', width: 1 });
-    g.circle(BET_CIRCLE_X, BET_CIRCLE_Y, this.betSpot?.radius ?? 32 + 4);
-    g.stroke({ color: 'rgba(255,255,255,0.12)', width: 1.5 });
-    this.root.addChildAt(g, 0);
+    for (const seat of seats) {
+      const color = seat.isPlayer
+        ? 'rgba(255, 215, 0, 0.55)'
+        : 'rgba(255, 215, 0, 0.25)';
+      const width = seat.isPlayer ? 2.5 : 2;
+
+      // Outer ring
+      g.circle(seat.x, seat.y, 30);
+      g.stroke({ color, width });
+      // Inner ring
+      g.circle(seat.x, seat.y, 22);
+      g.stroke({ color, width: 1 });
+    }
+    this.root.addChild(g);
+  }
+
+  /**
+   * Draw NPC placeholder seats and the player seat along the arc.
+   * @param {number} npcCount
+   */
+  _drawSeats(npcCount) {
+    // Clean up previous markers
+    for (const marker of this._seatMarkers) {
+      this.root.removeChild(marker.container);
+    }
+    this._seatMarkers = [];
+
+    const totalSeats = 1 + npcCount;
+    if (totalSeats <= 1) return; // No NPC seats to show if player is alone
+
+    const positions = computeSeatPositions(totalSeats, LAYOUT.seats);
+
+    for (const pos of positions) {
+      const marker = new SeatMarker(pos.x, pos.y, {
+        label: pos.isPlayer ? 'YOU' : 'EMPTY',
+        isPlayer: pos.isPlayer,
+      });
+      this._seatMarkers.push(marker);
+      this.root.addChild(marker.container);
+    }
+  }
+
+  /**
+   * Create a pill-shaped hand total badge (per spec Section 3.5).
+   * @param {number} x @param {number} y
+   * @returns {Container}
+   */
+  _createTotalBadge(x, y) {
+    const container = new Container();
+    container.x = x;
+    container.y = y;
+
+    const bg = new Graphics();
+    container._bg = bg;
+    container.addChild(bg);
+
+    const label = new Text({
+      text: '',
+      style: {
+        fill: '#ffd700',
+        fontSize: 16,
+        fontFamily: 'sans-serif',
+        fontWeight: 'bold',
+      },
+    });
+    label.anchor = { x: 0.5, y: 0.5 };
+    container._label = label;
+    container.addChild(label);
+
+    container.visible = false;
+    return container;
+  }
+
+  /**
+   * Redraw a total badge pill background to fit the current text.
+   * @param {Container} badge
+   */
+  _updateBadge(badge) {
+    const label = badge._label;
+    const bg = badge._bg;
+    bg.clear();
+
+    if (!label.text) {
+      badge.visible = false;
+      return;
+    }
+
+    badge.visible = true;
+    const padX = 10;
+    const padY = 3;
+    const w = label.width + padX * 2;
+    const h = label.height + padY * 2;
+
+    bg.roundRect(-w / 2, -h / 2, w, h, 10);
+    bg.fill('rgba(0, 0, 0, 0.60)');
+    bg.roundRect(-w / 2, -h / 2, w, h, 10);
+    bg.stroke({ color: 'rgba(255, 215, 0, 0.3)', width: 1 });
+
+    // Color bust text red
+    if (label.text === 'BUST') {
+      label.style.fill = '#ff4444';
+    } else {
+      label.style.fill = '#ffd700';
+    }
   }
 
   // --- Renderer interface implementation ---
@@ -130,12 +345,14 @@ export class TableScene {
 
   /** @param {string} text */
   updatePlayerTotal(text) {
-    this.playerTotal.text = text;
+    this.playerTotal._label.text = text;
+    this._updateBadge(this.playerTotal);
   }
 
   /** @param {string} text */
   updateDealerTotal(text) {
-    this.dealerTotal.text = text;
+    this.dealerTotal._label.text = text;
+    this._updateBadge(this.dealerTotal);
   }
 
   /** @param {number} amount */
@@ -185,8 +402,10 @@ export class TableScene {
     this.playerCards.removeChildren();
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
     this.betSpot.clear();
-    this.dealerTotal.text = '';
-    this.playerTotal.text = '';
+    this.dealerTotal._label.text = '';
+    this._updateBadge(this.dealerTotal);
+    this.playerTotal._label.text = '';
+    this._updateBadge(this.playerTotal);
 
     if (shoeSize != null) {
       this._updateStacksInternal(shoeSize, 0);
@@ -233,7 +452,7 @@ export class TableScene {
       sprite.y = 0;
       sprite.alpha = 0;
       container.addChild(sprite);
-      await fadeIn(sprite, this.app);
+      await tween(sprite, { alpha: 1 }, 200, this.app);
       x += sprite.width + CARD_GAP;
     }
 
@@ -243,7 +462,7 @@ export class TableScene {
       hidden.y = 0;
       hidden.alpha = 0;
       container.addChild(hidden);
-      await fadeIn(hidden, this.app);
+      await tween(hidden, { alpha: 1 }, 200, this.app);
     }
   }
 
@@ -266,7 +485,7 @@ export class TableScene {
       sprite.y = 0;
       sprite.alpha = 0;
       container.addChild(sprite);
-      await fadeIn(sprite, this.app);
+      await tween(sprite, { alpha: 1 }, 200, this.app);
       x += sprite.width + CARD_GAP;
     }
 
@@ -276,25 +495,7 @@ export class TableScene {
       hidden.y = 0;
       hidden.alpha = 0;
       container.addChild(hidden);
-      await fadeIn(hidden, this.app);
+      await tween(hidden, { alpha: 1 }, 200, this.app);
     }
   }
-}
-
-/** Fade a sprite from 0 → 1 over ~200ms using the app ticker. */
-function fadeIn(sprite, app) {
-  return new Promise((resolve) => {
-    const duration = 200;
-    let elapsed = 0;
-    const tick = (ticker) => {
-      elapsed += ticker.deltaMS;
-      sprite.alpha = Math.min(elapsed / duration, 1);
-      if (elapsed >= duration) {
-        sprite.alpha = 1;
-        app.ticker.remove(tick);
-        resolve();
-      }
-    };
-    app.ticker.add(tick);
-  });
 }
