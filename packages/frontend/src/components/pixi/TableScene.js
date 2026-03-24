@@ -8,26 +8,25 @@ import { executeCommands } from './commandExecutor.js';
 import { tween } from './tween.js';
 import { SeatMarker, computeSeatPositions } from './SeatMarker.js';
 
-const CARD_HEIGHT = 110;
-const CARD_GAP = 12;
-const STACK_CARD_HEIGHT = 80;
+const CARD_HEIGHT = 85;
+const CARD_OVERLAP = 28;
+const STACK_CARD_HEIGHT = 70;
 
 /**
  * All position constants for the table layout.
- * Canvas coordinate system is always 800x500.
+ * Canvas coordinate system is always 1200x750.
  * Coordinates follow VISUAL_DESIGN_SPEC.md Section 2.
  */
 const LAYOUT = {
-  dealer: { cardsX: 400, cardsY: 140, labelX: 400, labelY: 72 },
-  player: { cardsX: 400, cardsY: 310, labelX: 400, labelY: 290 },
-  bet:    { x: 400, y: 435 },
-  shoe:   { x: 720, y: 70 },
-  discard: { x: 80, y: 70 },
-  // Half-ellipse parameters for the table shape
-  // Dealer edge: (40, 60) to (760, 60), player arc apex at (400, 460)
-  table: { cx: 400, topY: 60, rx: 360, ry: 400 },
-  // Half-ellipse parameters for seat distribution
-  seats: { cx: 400, cy: 140, rx: 300, ry: 280 },
+  dealer: { cardsX: 600, cardsY: 180, labelX: 600, labelY: 100 },
+  player: { cardsX: 600, cardsY: 480, labelX: 600, labelY: 430 },
+  bet:    { x: 600, y: 610 },
+  shoe:   { x: 1100, y: 80 },
+  discard: { x: 100, y: 80 },
+  // Semicircle: flat edge at top, arc curves downward
+  table: { cx: 600, topY: 30, rx: 580 },
+  // Inner arc for seat distribution
+  seats: { cx: 600, cy: 30, rx: 490, ry: 490 },
 };
 
 /**
@@ -54,10 +53,10 @@ export class TableScene {
     this._drawSeats(npcCount);
 
     // Hand total badges (pill-shaped, per spec Section 3.5)
-    this.dealerTotal = this._createTotalBadge(LAYOUT.dealer.cardsX, LAYOUT.dealer.cardsY - 20);
+    this.dealerTotal = this._createTotalBadge(LAYOUT.dealer.cardsX, LAYOUT.dealer.cardsY - CARD_HEIGHT / 2 - 16);
     this.root.addChild(this.dealerTotal);
 
-    this.playerTotal = this._createTotalBadge(LAYOUT.player.cardsX, LAYOUT.player.cardsY + CARD_HEIGHT + 12);
+    this.playerTotal = this._createTotalBadge(LAYOUT.player.cardsX, LAYOUT.player.cardsY + CARD_HEIGHT / 2 + 16);
     this.root.addChild(this.playerTotal);
 
     // Card containers
@@ -71,19 +70,13 @@ export class TableScene {
     this.playerCards.y = LAYOUT.player.cardsY;
     this.root.addChild(this.playerCards);
 
-    // Shoe stack
-    this.shoeStack = new StackRenderer(
-      LAYOUT.shoe.x, LAYOUT.shoe.y,
-      LAYOUT.shoe.x + 35, LAYOUT.shoe.y + STACK_CARD_HEIGHT + 8,
-    );
+    // Shoe stack (center-anchored)
+    this.shoeStack = new StackRenderer(LAYOUT.shoe.x, LAYOUT.shoe.y);
     this.root.addChild(this.shoeStack.container);
     this.root.addChild(this.shoeStack.label);
 
-    // Discard stack
-    this.discardStack = new StackRenderer(
-      LAYOUT.discard.x, LAYOUT.discard.y,
-      LAYOUT.discard.x + 35, LAYOUT.discard.y + STACK_CARD_HEIGHT + 8,
-    );
+    // Discard stack (center-anchored)
+    this.discardStack = new StackRenderer(LAYOUT.discard.x, LAYOUT.discard.y);
     this.root.addChild(this.discardStack.container);
     this.root.addChild(this.discardStack.label);
 
@@ -99,17 +92,17 @@ export class TableScene {
   }
 
   /**
-   * Helper to trace the semi-circular table path on a Graphics context.
+   * Trace a semicircular table path: flat edge at top, arc curving down.
+   * Uses a true circular arc instead of Bézier approximation.
    * @param {Graphics} g
-   * @param {number} cx @param {number} topY @param {number} rx @param {number} ry
+   * @param {number} cx - center X of the flat edge
+   * @param {number} topY - Y coordinate of the flat edge
+   * @param {number} r - radius of the semicircle
    */
-  _traceFeltPath(g, cx, topY, rx, ry) {
-    const leftX = cx - rx;
-    const rightX = cx + rx;
-    g.moveTo(leftX, topY);
-    g.lineTo(rightX, topY);
-    g.quadraticCurveTo(rightX + 20, topY + ry * 0.6, cx, topY + ry);
-    g.quadraticCurveTo(leftX - 20, topY + ry * 0.6, leftX, topY);
+  _traceFeltPath(g, cx, topY, r) {
+    g.moveTo(cx - r, topY);
+    g.lineTo(cx + r, topY);
+    g.arc(cx, topY, r, 0, Math.PI);
     g.closePath();
   }
 
@@ -118,7 +111,7 @@ export class TableScene {
    * Layers: background → outer rim → felt fill → inner gold line → printed text.
    */
   _drawFelt() {
-    const { cx, topY, rx, ry } = LAYOUT.table;
+    const { cx, topY, rx } = LAYOUT.table;
     const W = this.app.screen.width;
     const H = this.app.screen.height;
 
@@ -130,23 +123,20 @@ export class TableScene {
 
     // --- Felt fill ---
     const felt = new Graphics();
-    this._traceFeltPath(felt, cx, topY, rx, ry);
+    this._traceFeltPath(felt, cx, topY, rx);
     felt.fill('#1a5c2a');
     this.root.addChild(felt);
 
     // --- Outer rim stroke (simulates wooden rail) ---
     const rim = new Graphics();
-    this._traceFeltPath(rim, cx, topY, rx, ry);
+    this._traceFeltPath(rim, cx, topY, rx);
     rim.stroke({ color: '#0d3318', width: 6 });
     this.root.addChild(rim);
 
-    // --- Inner gold decorative line (inset 12px) ---
-    const inset = 12;
-    const irx = rx - inset;
-    const iry = ry - inset;
-    const itopY = topY + inset;
+    // --- Inner gold decorative line (inset 14px) ---
+    const inset = 14;
     const gold = new Graphics();
-    this._traceFeltPath(gold, cx, itopY, irx, iry);
+    this._traceFeltPath(gold, cx, topY + inset, rx - inset);
     gold.stroke({ color: 'rgba(255, 215, 0, 0.35)', width: 2 });
     this.root.addChild(gold);
 
@@ -156,14 +146,14 @@ export class TableScene {
       text: 'BLACKJACK PAYS 3 TO 2',
       style: {
         fill: 'rgba(255, 215, 0, 0.30)',
-        fontSize: 16,
+        fontSize: 18,
         fontFamily: 'Georgia, serif',
         fontWeight: 'bold',
         letterSpacing: 3,
       },
     });
     bjText.anchor = { x: 0.5, y: 0.5 };
-    bjText.x = 400;
+    bjText.x = cx;
     bjText.y = 130;
     this.root.addChild(bjText);
 
@@ -172,15 +162,15 @@ export class TableScene {
       text: 'INSURANCE PAYS 2 TO 1',
       style: {
         fill: 'rgba(255, 215, 0, 0.22)',
-        fontSize: 11,
+        fontSize: 13,
         fontFamily: 'Georgia, serif',
         fontWeight: 'bold',
         letterSpacing: 2,
       },
     });
     insText.anchor = { x: 0.5, y: 0.5 };
-    insText.x = 400;
-    insText.y = 185;
+    insText.x = cx;
+    insText.y = 240;
     this.root.addChild(insText);
 
     // "DEALER"
@@ -188,15 +178,15 @@ export class TableScene {
       text: 'DEALER',
       style: {
         fill: 'rgba(255, 255, 255, 0.20)',
-        fontSize: 11,
+        fontSize: 13,
         fontFamily: 'sans-serif',
         fontWeight: 'bold',
         letterSpacing: 4,
       },
     });
     dealerText.anchor = { x: 0.5, y: 0.5 };
-    dealerText.x = 400;
-    dealerText.y = 72;
+    dealerText.x = cx;
+    dealerText.y = 75;
     this.root.addChild(dealerText);
 
     // --- 7 Betting circle markings along the arc ---
@@ -205,19 +195,17 @@ export class TableScene {
 
   /**
    * Draw the 7 decorative betting circles along the player arc.
-   * Per VISUAL_DESIGN_SPEC.md Section 2.1.
+   * Positions computed on the inner semicircular arc.
    */
   _drawBettingCircles() {
-    /** @type {Array<{x: number, y: number, isPlayer: boolean}>} */
-    const seats = [
-      { x: 115, y: 330, isPlayer: false },
-      { x: 185, y: 385, isPlayer: false },
-      { x: 275, y: 420, isPlayer: false },
-      { x: 400, y: 435, isPlayer: true },
-      { x: 525, y: 420, isPlayer: false },
-      { x: 615, y: 385, isPlayer: false },
-      { x: 685, y: 330, isPlayer: false },
-    ];
+    const { cx, cy, rx } = LAYOUT.seats;
+    const angles = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map(f => f * Math.PI);
+
+    const seats = angles.map((a, i) => ({
+      x: Math.round(cx + rx * Math.cos(a)),
+      y: Math.round(cy + rx * Math.sin(a)),
+      isPlayer: i === 3,
+    }));
 
     const g = new Graphics();
     for (const seat of seats) {
@@ -399,7 +387,9 @@ export class TableScene {
   clear(shoeSize) {
     this.animationQueue.clear();
     this.dealerCards.removeChildren();
+    this.dealerCards.pivot.x = 0;
     this.playerCards.removeChildren();
+    this.playerCards.pivot.x = 0;
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
     this.betSpot.clear();
     this.dealerTotal._label.text = '';
@@ -437,7 +427,23 @@ export class TableScene {
   }
 
   /**
+   * Center a hand container's pivot so cards are centered around the container's position.
+   * @param {Container} container
+   */
+  _centerHand(container) {
+    const n = container.children.length;
+    if (n === 0) {
+      container.pivot.x = 0;
+      return;
+    }
+    // Cards use center anchors and are placed at i * CARD_OVERLAP.
+    // Visual center of all cards is at (n - 1) * CARD_OVERLAP / 2.
+    container.pivot.x = (n - 1) * CARD_OVERLAP / 2;
+  }
+
+  /**
    * Full re-render of a hand (used for dealer reveal).
+   * Cards are placed with overlapping fan layout.
    * @param {Container} container
    * @param {Array<{rank: string, suit: string}>} cards
    * @param {boolean} appendHidden
@@ -445,57 +451,58 @@ export class TableScene {
   async _renderHand(container, cards, appendHidden) {
     container.removeChildren();
 
-    let x = 0;
+    let i = 0;
     for (const card of cards) {
       const sprite = await createCardSprite(card, { height: CARD_HEIGHT });
-      sprite.x = x;
+      sprite.x = i * CARD_OVERLAP;
       sprite.y = 0;
       sprite.alpha = 0;
       container.addChild(sprite);
       await tween(sprite, { alpha: 1 }, 200, this.app);
-      x += sprite.width + CARD_GAP;
+      i++;
     }
 
     if (appendHidden) {
       const hidden = await createCardSprite(null, { height: CARD_HEIGHT });
-      hidden.x = x;
+      hidden.x = i * CARD_OVERLAP;
       hidden.y = 0;
       hidden.alpha = 0;
       container.addChild(hidden);
       await tween(hidden, { alpha: 1 }, 200, this.app);
     }
+
+    this._centerHand(container);
   }
 
   /**
    * Incrementally add new cards to an existing hand container.
+   * Cards are placed with overlapping fan layout and re-centered.
    * @param {Container} container
    * @param {Array<{rank: string, suit: string}>} newCards
    * @param {boolean} appendHidden
    */
   async _addCards(container, newCards, appendHidden) {
-    let x = 0;
-    if (container.children.length > 0) {
-      const last = container.children[container.children.length - 1];
-      x = last.x + last.width + CARD_GAP;
-    }
+    let i = container.children.length;
 
     for (const card of newCards) {
       const sprite = await createCardSprite(card, { height: CARD_HEIGHT });
-      sprite.x = x;
+      sprite.x = i * CARD_OVERLAP;
       sprite.y = 0;
       sprite.alpha = 0;
       container.addChild(sprite);
       await tween(sprite, { alpha: 1 }, 200, this.app);
-      x += sprite.width + CARD_GAP;
+      i++;
+      this._centerHand(container);
     }
 
     if (appendHidden) {
       const hidden = await createCardSprite(null, { height: CARD_HEIGHT });
-      hidden.x = x;
+      hidden.x = i * CARD_OVERLAP;
       hidden.y = 0;
       hidden.alpha = 0;
       container.addChild(hidden);
       await tween(hidden, { alpha: 1 }, 200, this.app);
+      this._centerHand(container);
     }
   }
 }

@@ -3,8 +3,8 @@ import { PHASES } from '@blackjack/shared';
 import { usePixiApp } from '../../hooks/usePixiApp.js';
 import { TableScene } from './TableScene.js';
 
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 500;
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 750;
 
 /**
  * React wrapper that hosts the PixiJS canvas.
@@ -28,8 +28,8 @@ export default function PixiCanvas({ gameState, npcCount = 0 }) {
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const parentWidth = entry.contentRect.width;
-        setScale(Math.min(parentWidth / CANVAS_WIDTH, 1.0));
+        const { width: pw, height: ph } = entry.contentRect;
+        setScale(Math.min(pw / CANVAS_WIDTH, ph / CANVAS_HEIGHT));
       }
     });
 
@@ -64,18 +64,19 @@ export default function PixiCanvas({ gameState, npcCount = 0 }) {
   }, [gameState]);
 
   return (
-    <div ref={parentRef} style={{ width: '100%' }}>
+    <div ref={parentRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div
         ref={canvasRef}
         className="pixi-canvas-wrapper"
         style={{
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
-          margin: '0 auto',
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: `translate(-50%, -50%) scale(${scale})`,
           borderRadius: 12,
           overflow: 'hidden',
-          transform: `scale(${scale})`,
-          transformOrigin: 'top center',
         }}
       />
     </div>

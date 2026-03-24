@@ -32,6 +32,7 @@ export async function createCardSprite(card, { height = 140 } = {}) {
   // Scale to desired height, maintaining aspect ratio
   const scale = height / sprite.texture.height;
   sprite.scale.set(scale);
+  sprite.anchor.set(0.5);
 
   return sprite;
 }

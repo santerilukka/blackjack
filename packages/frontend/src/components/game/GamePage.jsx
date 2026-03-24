@@ -101,57 +101,61 @@ export default function GamePage({ user, onLogout }) {
 
       {error && <div className="error">{error}</div>}
 
-      <PixiCanvas gameState={gameState} />
-
-      <div
-        className="bet-panel-wrapper"
-        style={{ opacity: isBetting ? 1 : 0.3, pointerEvents: isBetting ? 'auto' : 'none' }}
-      >
-        <BetPanel
-          balance={balance}
-          betAmount={betAmount}
-          onBetAmountChange={setBetAmount}
-          onPlaceBet={placeBet}
-          disabled={loading || !isBetting}
-        />
+      <div className="game-canvas-area">
+        <PixiCanvas gameState={gameState} />
       </div>
 
-      <div
-        className="action-bar-wrapper"
-        style={{ opacity: isPlayerTurn ? 1 : 0.3, pointerEvents: isPlayerTurn ? 'auto' : 'none' }}
-      >
-        <ActionBar
-          onHit={hit}
-          onStand={stand}
-          onDouble={double}
-          onSplit={split}
-          onSurrender={surrender}
-          disabled={loading || !isPlayerTurn}
-          availableActions={gameState.availableActions}
-        />
-      </div>
+      <div className="game-bottom-bar">
+        <div
+          className="bet-panel-wrapper"
+          style={{ opacity: isBetting ? 1 : 0.3, pointerEvents: isBetting ? 'auto' : 'none' }}
+        >
+          <BetPanel
+            balance={balance}
+            betAmount={betAmount}
+            onBetAmountChange={setBetAmount}
+            onPlaceBet={placeBet}
+            disabled={loading || !isBetting}
+          />
+        </div>
 
-      <div
-        className="insurance-wrapper"
-        style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
-      >
-        <div className="insurance-panel">
-          <button onClick={() => insurance(true)} disabled={loading || !isInsurance}>
-            Yes <kbd>Y</kbd>
-          </button>
-          <button onClick={() => insurance(false)} disabled={loading || !isInsurance}>
-            No <kbd>N</kbd>
+        <div
+          className="action-bar-wrapper"
+          style={{ opacity: isPlayerTurn ? 1 : 0.3, pointerEvents: isPlayerTurn ? 'auto' : 'none' }}
+        >
+          <ActionBar
+            onHit={hit}
+            onStand={stand}
+            onDouble={double}
+            onSplit={split}
+            onSurrender={surrender}
+            disabled={loading || !isPlayerTurn}
+            availableActions={gameState.availableActions}
+          />
+        </div>
+
+        <div
+          className="insurance-wrapper"
+          style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
+        >
+          <div className="insurance-panel">
+            <button onClick={() => insurance(true)} disabled={loading || !isInsurance}>
+              Yes <kbd>Y</kbd>
+            </button>
+            <button onClick={() => insurance(false)} disabled={loading || !isInsurance}>
+              No <kbd>N</kbd>
+            </button>
+          </div>
+        </div>
+
+        <div
+          className="new-round-wrapper"
+          style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
+        >
+          <button className="new-round-btn" onClick={newRound} disabled={loading || !isResolved}>
+            New Round <kbd>N</kbd>
           </button>
         </div>
-      </div>
-
-      <div
-        className="new-round-wrapper"
-        style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
-      >
-        <button className="new-round-btn" onClick={newRound} disabled={loading || !isResolved}>
-          New Round <kbd>N</kbd>
-        </button>
       </div>
     </div>
   );

@@ -1,29 +1,28 @@
 import { Container, Text } from 'pixi.js';
 import { createCardSprite } from './CardSprite.js';
 
-const STACK_CARD_HEIGHT = 100;
+const STACK_CARD_HEIGHT = 70;
 const STACK_LAYER_OFFSET = 2;
 const STACK_MAX_LAYERS = 5;
 
 /**
  * Renders a card-back stack (shoe or discard pile).
+ * The container position is the visual center of the stack.
  */
 export class StackRenderer {
   /**
-   * @param {number} x
-   * @param {number} y
-   * @param {number} labelX - center X for the label
-   * @param {number} labelY
+   * @param {number} x - center X
+   * @param {number} y - center Y
    */
-  constructor(x, y, labelX, labelY) {
+  constructor(x, y) {
     this.container = new Container();
     this.container.x = x;
     this.container.y = y;
 
     this.label = new Text({ text: '', style: { fill: '#cccccc', fontSize: 13, fontFamily: 'sans-serif' } });
     this.label.anchor = { x: 0.5, y: 0 };
-    this.label.x = labelX;
-    this.label.y = labelY;
+    this.label.x = x;
+    this.label.y = y + STACK_CARD_HEIGHT / 2 + 8;
 
     this._count = 0;
   }
@@ -49,8 +48,9 @@ export class StackRenderer {
 
     for (let i = 0; i < layers; i++) {
       const card = await createCardSprite(null, { height: STACK_CARD_HEIGHT });
-      card.x = i * STACK_LAYER_OFFSET;
-      card.y = (layers - 1 - i) * STACK_LAYER_OFFSET;
+      // Cards have center anchor, so offset from center of stack
+      card.x = (i - (layers - 1) / 2) * STACK_LAYER_OFFSET;
+      card.y = ((layers - 1) / 2 - i) * STACK_LAYER_OFFSET;
       this.container.addChild(card);
     }
   }
