@@ -1,5 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import { createCardSprite } from './CardSprite.js';
+import { createCardSprite, loadCardSpritesheet } from './CardSprite.js';
 import { AnimationQueue } from './AnimationQueue.js';
 import { BetSpot } from './BetSpot.js';
 import { StackRenderer } from './StackRenderer.js';
@@ -44,6 +44,9 @@ export class TableScene {
     app.stage.addChild(this.root);
 
     this.animationQueue = new AnimationQueue();
+
+    // Preload card sprite sheet so first deal is instant
+    loadCardSpritesheet();
 
     // Felt background
     this._drawFelt();
@@ -371,13 +374,13 @@ export class TableScene {
     if (dealerCmd || playerCmd) {
       this.animationQueue.enqueue(async () => {
         await executeCommands({ dealerCmd, playerCmd, showDealerHidden, gameState }, renderer);
+        this._renderedState = newRenderedState;
       });
     } else {
       // No card changes, just update labels/stacks synchronously
       await executeCommands({ dealerCmd: null, playerCmd: null, showDealerHidden, gameState }, renderer);
+      this._renderedState = newRenderedState;
     }
-
-    this._renderedState = newRenderedState;
   }
 
   /**

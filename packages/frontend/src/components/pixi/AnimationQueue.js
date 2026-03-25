@@ -10,6 +10,8 @@ export class AnimationQueue {
     this._running = false;
     /** @type {(() => void) | null} */
     this.onIdle = null;
+    /** @type {((busy: boolean) => void) | null} */
+    this.onBusyChange = null;
   }
 
   /** @returns {boolean} */
@@ -31,11 +33,13 @@ export class AnimationQueue {
   /** Process queued animations sequentially. */
   async _flush() {
     this._running = true;
+    this.onBusyChange?.(true);
     while (this._queue.length > 0) {
       const fn = this._queue.shift();
       await fn();
     }
     this._running = false;
+    this.onBusyChange?.(false);
     this.onIdle?.();
   }
 

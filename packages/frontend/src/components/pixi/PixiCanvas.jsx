@@ -15,11 +15,12 @@ const CANVAS_HEIGHT = 900;
  *
  * Never import PixiJS directly in other React components — use this bridge.
  */
-export default function PixiCanvas({ gameState, npcCount = 0 }) {
+export default function PixiCanvas({ gameState, npcCount = 0, onAnimatingChange }) {
   const { canvasRef, app, ready } = usePixiApp({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
   const sceneRef = useRef(null);
   const parentRef = useRef(null);
   const [scale, setScale] = useState(1);
+  const onAnimatingChangeRef = useRef(onAnimatingChange);
 
   // Responsive scaling via ResizeObserver on the parent element
   useEffect(() => {
@@ -37,11 +38,19 @@ export default function PixiCanvas({ gameState, npcCount = 0 }) {
     return () => observer.disconnect();
   }, []);
 
+  // Keep callback ref current without re-creating the scene
+  useEffect(() => {
+    onAnimatingChangeRef.current = onAnimatingChange;
+  }, [onAnimatingChange]);
+
   // Create the TableScene once the app is ready
   useEffect(() => {
     if (!ready || !app) return;
 
     const scene = new TableScene(app, { npcCount });
+    scene.animationQueue.onBusyChange = (busy) => {
+      onAnimatingChangeRef.current?.(busy);
+    };
     sceneRef.current = scene;
 
     return () => {

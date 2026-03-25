@@ -26,7 +26,9 @@ export default function GamePage({ user, onLogout }) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [betAmount, setBetAmount] = useState(10);
+  const [animating, setAnimating] = useState(false);
   const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
+  const handleAnimatingChange = useCallback((busy) => setAnimating(busy), []);
 
   useEffect(() => {
     startSession();
@@ -39,7 +41,7 @@ export default function GamePage({ user, onLogout }) {
   }, [gameState, betAmount, placeBet]);
 
   useEffect(() => {
-    if (!gameState || loading) return;
+    if (!gameState || loading || animating) return;
 
     function handleKeyDown(e) {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -70,7 +72,7 @@ export default function GamePage({ user, onLogout }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, loading, hit, stand, double, split, surrender, insurance, newRound, toggleMenu, doBet]);
+  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, newRound, toggleMenu, doBet]);
 
   if (!gameState) {
     return <div className="game-page">Loading...</div>;
@@ -102,7 +104,7 @@ export default function GamePage({ user, onLogout }) {
       {error && <div className="error">{error}</div>}
 
       <div className="game-canvas-area">
-        <PixiCanvas gameState={gameState} />
+        <PixiCanvas gameState={gameState} onAnimatingChange={handleAnimatingChange} />
       </div>
 
       <div className="game-bottom-bar">
@@ -115,7 +117,7 @@ export default function GamePage({ user, onLogout }) {
             betAmount={betAmount}
             onBetAmountChange={setBetAmount}
             onPlaceBet={placeBet}
-            disabled={loading || !isBetting}
+            disabled={loading || animating || !isBetting}
           />
         </div>
 
@@ -129,7 +131,7 @@ export default function GamePage({ user, onLogout }) {
             onDouble={double}
             onSplit={split}
             onSurrender={surrender}
-            disabled={loading || !isPlayerTurn}
+            disabled={loading || animating || !isPlayerTurn}
             availableActions={gameState.availableActions}
           />
         </div>
@@ -139,10 +141,10 @@ export default function GamePage({ user, onLogout }) {
           style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
         >
           <div className="insurance-panel">
-            <button onClick={() => insurance(true)} disabled={loading || !isInsurance}>
+            <button onClick={() => insurance(true)} disabled={loading || animating || !isInsurance}>
               Yes <kbd>Y</kbd>
             </button>
-            <button onClick={() => insurance(false)} disabled={loading || !isInsurance}>
+            <button onClick={() => insurance(false)} disabled={loading || animating || !isInsurance}>
               No <kbd>N</kbd>
             </button>
           </div>
@@ -152,7 +154,7 @@ export default function GamePage({ user, onLogout }) {
           className="new-round-wrapper"
           style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
         >
-          <button className="new-round-btn" onClick={newRound} disabled={loading || !isResolved}>
+          <button className="new-round-btn" onClick={newRound} disabled={loading || animating || !isResolved}>
             New Round <kbd>N</kbd>
           </button>
         </div>
