@@ -25,6 +25,10 @@ import { formatHandTotal, formatDealerTotal } from './tableDiff.js';
  * @param {Renderer} renderer - Renderer implementation
  */
 export async function executeCommands({ dealerCmd, playerCmd, showDealerHidden, gameState }, renderer) {
+  if (playerCmd) {
+    await renderer.addPlayerCards(playerCmd.cards, playerCmd.addHidden);
+  }
+
   if (dealerCmd) {
     if (dealerCmd.type === 'redraw') {
       await renderer.redrawDealerHand(dealerCmd.cards, dealerCmd.showHidden);
@@ -36,10 +40,6 @@ export async function executeCommands({ dealerCmd, playerCmd, showDealerHidden, 
     } else {
       await renderer.addDealerCards(dealerCmd.cards, dealerCmd.addHidden);
     }
-  }
-
-  if (playerCmd) {
-    await renderer.addPlayerCards(playerCmd.cards, playerCmd.addHidden);
   }
 
   renderer.updatePlayerTotal(formatHandTotal(gameState.playerHand));
