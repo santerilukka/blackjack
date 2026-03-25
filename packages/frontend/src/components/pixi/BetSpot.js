@@ -1,6 +1,6 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import { createTopChipSprite, decomposeIntoChips } from './ChipSprite.js';
-import { tween, easeOutCubic } from './tween.js';
+import { easeOutQuad, easeOutBounce } from './tween.js';
 
 const BET_CIRCLE_RADIUS = 45;
 const CHIP_SIZE = 70;
@@ -56,39 +56,112 @@ export class BetSpot {
     if (i < MAX_VISIBLE_CHIPS) {
       // Wrapper positioned at the final stack location
       const wrapper = new Container();
-      wrapper.x = xOff;
-      wrapper.y = yOff;
 
       // Shadow centered in wrapper
       const shadow = new Graphics();
       shadow.ellipse(2, 3, CHIP_SIZE / 2 - 2, CHIP_SIZE / 2 - 8);
       shadow.fill({ color: 0x000000, alpha: 0.25 });
+      shadow.alpha = 0;
       wrapper.addChild(shadow);
 
       // Chip sprite centered in wrapper
       const sprite = createTopChipSprite(denomination, { size: CHIP_SIZE });
-      sprite.rotation = rot;
       wrapper.addChild(sprite);
 
       this._chipWrappers.push(wrapper);
 
-      // Start off-screen below with small scale
-      const finalX = wrapper.x;
-      const finalY = wrapper.y;
-      wrapper.x = finalX;
-      wrapper.y = finalY + 200;
+      // --- Flung-from-HUD animation ---
+      const finalX = xOff;
+      const finalY = yOff;
+      const startX = finalX + (Math.random() - 0.5) * 160;
+      const startY = finalY + 350;
+      const startRot = Math.random() * Math.PI * 2;
+      const totalSpin = (1 + Math.random() * 2) * Math.PI * 2; // 1-3 full spins
+      const finalRot = rot;
+      const arcHeight = -60 - Math.random() * 20; // arc peak offset
+
+      wrapper.x = startX;
+      wrapper.y = startY;
       wrapper.alpha = 0;
-      wrapper.scale.set(0.3);
+      wrapper.scale.set(0.5);
+      sprite.rotation = startRot;
 
       this.container.addChild(wrapper);
 
-      // Animate to final position (spin via scale flip, not rotation)
-      await tween(wrapper, {
-        y: finalY,
-        alpha: 1,
-        scaleX: 1,
-        scaleY: 1,
-      }, 300, app, { easing: easeOutCubic });
+      // Phase 1: Flight with arc (250ms)
+      const flightDuration = 250;
+      await new Promise((resolve) => {
+        let elapsed = 0;
+        const tick = (ticker) => {
+          elapsed += ticker.deltaMS;
+          const progress = Math.min(elapsed / flightDuration, 1);
+          const eased = easeOutQuad(progress);
+
+          // Linear x interpolation
+          wrapper.x = startX + (finalX - startX) * eased;
+
+          // Y with parabolic arc: arc peaks at progress=0.5
+          const linearY = startY + (finalY - startY) * eased;
+          const arcOffset = arcHeight * 4 * progress * (1 - progress);
+          wrapper.y = linearY + arcOffset;
+
+          // Scale: grow from 0.5 to 1.0
+          const s = 0.5 + 0.5 * eased;
+          wrapper.scale.set(s);
+
+          // Alpha: fast fade-in over first 20%
+          wrapper.alpha = Math.min(progress / 0.2, 1);
+
+          // Rotation: spin during flight
+          sprite.rotation = startRot + totalSpin * eased;
+
+          // Shadow fades in during second half of flight
+          shadow.alpha = Math.max(0, (progress - 0.5) * 2) * 0.25;
+
+          if (progress >= 1) {
+            wrapper.x = finalX;
+            wrapper.y = finalY;
+            wrapper.scale.set(1);
+            wrapper.alpha = 1;
+            sprite.rotation = startRot + totalSpin;
+            shadow.alpha = 0.25;
+            app.ticker.remove(tick);
+            resolve();
+          }
+        };
+        app.ticker.add(tick);
+      });
+
+      // Snap rotation to final resting value
+      sprite.rotation = finalRot;
+
+      // Phase 2: Landing settle — squash & bounce (150ms)
+      const landDuration = 150;
+      await new Promise((resolve) => {
+        let elapsed = 0;
+        const baseY = finalY;
+        const tick = (ticker) => {
+          elapsed += ticker.deltaMS;
+          const progress = Math.min(elapsed / landDuration, 1);
+          const bounce = easeOutBounce(progress);
+
+          // Squash/stretch: starts squashed, settles to 1.0
+          const squash = 1 + (1 - bounce) * 0.08;
+          const stretch = 1 - (1 - bounce) * 0.06;
+          wrapper.scale.set(squash, stretch);
+
+          // Slight y bounce
+          wrapper.y = baseY - (1 - bounce) * 4;
+
+          if (progress >= 1) {
+            wrapper.scale.set(1);
+            wrapper.y = finalY;
+            app.ticker.remove(tick);
+            resolve();
+          }
+        };
+        app.ticker.add(tick);
+      });
     }
 
     // Update total label
