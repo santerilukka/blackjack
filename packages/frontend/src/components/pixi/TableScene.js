@@ -1,5 +1,6 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import { createCardSprite, loadCardSpritesheet } from './CardSprite.js';
+import { loadChipTextures } from './ChipSprite.js';
 import { AnimationQueue } from './AnimationQueue.js';
 import { BetSpot } from './BetSpot.js';
 import { StackRenderer } from './StackRenderer.js';
@@ -45,8 +46,9 @@ export class TableScene {
 
     this.animationQueue = new AnimationQueue();
 
-    // Preload card sprite sheet so first deal is instant
+    // Preload card sprite sheet and chip textures so first deal/bet is instant
     loadCardSpritesheet();
+    loadChipTextures();
 
     // Felt background
     this._drawFelt();

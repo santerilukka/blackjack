@@ -1,5 +1,6 @@
 import { SHORTCUTS } from '@blackjack/shared';
 import { CHIP_VALUES } from '../../hooks/keyboardHandler.js';
+import { chipFlatPath } from '../../utils/chipConfig.js';
 
 export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlaceBet, disabled }) {
   function handleBet() {
@@ -14,11 +15,17 @@ export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlac
         {CHIP_VALUES.map((value, index) => (
           <button
             key={value}
-            className={`chip ${betAmount === value ? 'selected' : ''}`}
+            className={`chip-btn ${betAmount === value ? 'selected' : ''}`}
             onClick={() => onBetAmountChange(value)}
             disabled={disabled}
           >
-            ${value}
+            <span className="chip-denomination">${value}</span>
+            <img
+              src={chipFlatPath(value)}
+              alt={`$${value} chip`}
+              className="chip-img"
+              draggable={false}
+            />
             <span className="chip-hint">{index + 1}</span>
           </button>
         ))}

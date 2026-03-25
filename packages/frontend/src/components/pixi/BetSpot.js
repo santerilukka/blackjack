@@ -1,88 +1,119 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import { createTopChipSprite, decomposeIntoChips } from './ChipSprite.js';
 
 const BET_CIRCLE_RADIUS = 45;
-
-/** Standard casino chip colours keyed by denomination */
-const CHIP_COLORS = [
-  { min: 100, fill: '#1a1a2e', stroke: '#e0e0e0', label: '#ffffff' },
-  { min: 50,  fill: '#e67e22', stroke: '#f5c06d', label: '#ffffff' },
-  { min: 25,  fill: '#27ae60', stroke: '#6dd5a0', label: '#ffffff' },
-  { min: 10,  fill: '#2980b9', stroke: '#6db8e0', label: '#ffffff' },
-  { min: 0,   fill: '#c0392b', stroke: '#e88a84', label: '#ffffff' },
-];
+const CHIP_SIZE = 70;
+const MAX_VISIBLE_CHIPS = 8;
+const STACK_Y_OFFSET = 4;
 
 /**
- * Renders the betting spot: empty circle when no bet, chip when active.
+ * Renders the betting spot on the PixiJS table.
+ * Empty state: translucent circle with "BET" text.
+ * Active state: stacked top-down chip sprites with shadow + total label.
  */
 export class BetSpot {
-  /**
-   * @param {number} x
-   * @param {number} y
-   */
+  /** @param {number} x @param {number} y */
   constructor(x, y) {
     this.container = new Container();
     this.container.x = x;
     this.container.y = y;
     this._currentBet = 0;
-    this._draw(0);
+    this._drawEmpty();
   }
 
-  /** @type {number} */
   get radius() { return BET_CIRCLE_RADIUS; }
 
-  /**
-   * Update the bet display if the amount changed.
-   * @param {number} amount
-   */
+  /** @param {number} amount */
   update(amount) {
     if (amount === this._currentBet) return;
     this._currentBet = amount;
-    this._draw(amount);
-  }
-
-  /** Reset to empty state. */
-  clear() {
-    this._currentBet = 0;
-    this._draw(0);
-  }
-
-  /** @private */
-  _draw(amount) {
     this.container.removeChildren();
-    const g = new Graphics();
 
     if (amount <= 0) {
-      g.circle(0, 0, BET_CIRCLE_RADIUS);
-      g.stroke({ color: 'rgba(255,255,255,0.3)', width: 2 });
-      const hint = new Text({
-        text: 'BET',
-        style: { fill: 'rgba(255,255,255,0.25)', fontSize: 18, fontFamily: 'sans-serif', fontWeight: 'bold' },
-      });
-      hint.anchor = { x: 0.5, y: 0.5 };
-      this.container.addChild(g, hint);
-      return;
+      this._drawEmpty();
+    } else {
+      this._drawChipStack(amount);
+    }
+  }
+
+  clear() {
+    this._currentBet = 0;
+    this.container.removeChildren();
+    this._drawEmpty();
+  }
+
+  /** Draw the empty bet circle placeholder. */
+  _drawEmpty() {
+    const g = new Graphics();
+    g.circle(0, 0, BET_CIRCLE_RADIUS);
+    g.stroke({ color: 'rgba(255,255,255,0.3)', width: 2 });
+
+    const hint = new Text({
+      text: 'BET',
+      style: {
+        fill: 'rgba(255,255,255,0.25)',
+        fontSize: 18,
+        fontFamily: 'sans-serif',
+        fontWeight: 'bold',
+      },
+    });
+    hint.anchor = { x: 0.5, y: 0.5 };
+    this.container.addChild(g, hint);
+  }
+
+  /** Draw stacked chip sprites with shadows and a total label. */
+  _drawChipStack(amount) {
+    const chips = decomposeIntoChips(amount);
+    const visibleChips = chips.slice(0, MAX_VISIBLE_CHIPS);
+
+    // Draw chips from bottom to top
+    for (let i = 0; i < visibleChips.length; i++) {
+      const denom = visibleChips[i];
+      const yOff = -i * STACK_Y_OFFSET;
+      const xOff = i % 2 === 0 ? -1 : 1;
+
+      // Shadow ellipse beneath chip
+      const shadow = new Graphics();
+      shadow.ellipse(xOff + 2, yOff + 3, CHIP_SIZE / 2 - 2, CHIP_SIZE / 2 - 8);
+      shadow.fill({ color: 0x000000, alpha: 0.25 });
+      this.container.addChild(shadow);
+
+      // Chip sprite
+      const sprite = createTopChipSprite(denom, { size: CHIP_SIZE });
+      sprite.x = xOff;
+      sprite.y = yOff;
+      this.container.addChild(sprite);
     }
 
-    const chipStyle = CHIP_COLORS.find(c => amount >= c.min) || CHIP_COLORS[CHIP_COLORS.length - 1];
+    // Total label below the stack
+    const labelY = CHIP_SIZE / 2 + 12;
+    this._drawTotalLabel(amount, 0, labelY);
+  }
 
-    g.circle(0, 0, BET_CIRCLE_RADIUS);
-    g.fill(chipStyle.fill);
-    g.circle(0, 0, BET_CIRCLE_RADIUS);
-    g.stroke({ color: chipStyle.stroke, width: 3 });
-    g.circle(0, 0, BET_CIRCLE_RADIUS - 7);
-    g.stroke({ color: chipStyle.stroke, width: 1 });
-    this.container.addChild(g);
-
+  /** Draw a pill-shaped total bet label. */
+  _drawTotalLabel(amount, x, y) {
     const label = new Text({
       text: `$${amount}`,
       style: {
-        fill: chipStyle.label,
-        fontSize: amount >= 1000 ? 16 : 20,
+        fill: '#ffffff',
+        fontSize: 18,
         fontFamily: 'sans-serif',
         fontWeight: 'bold',
       },
     });
     label.anchor = { x: 0.5, y: 0.5 };
-    this.container.addChild(label);
+    label.x = x;
+    label.y = y;
+
+    // Pill background
+    const padX = 10;
+    const padY = 4;
+    const w = label.width + padX * 2;
+    const h = label.height + padY * 2;
+    const bg = new Graphics();
+    bg.roundRect(x - w / 2, y - h / 2, w, h, 10);
+    bg.fill({ color: 0x000000, alpha: 0.6 });
+
+    this.container.addChild(bg, label);
   }
 }
