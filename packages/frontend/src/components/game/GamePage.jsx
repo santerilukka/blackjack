@@ -128,12 +128,15 @@ export default function GamePage({ user, onLogout }) {
 
       {error && <div className="error">{error}</div>}
 
+      {gameState.message && (
+        <div className="game-message">{gameState.message}</div>
+      )}
+
       <div className="game-canvas-area">
         <PixiCanvas ref={pixiRef} gameState={gameState} onAnimatingChange={handleAnimatingChange} />
       </div>
 
       <div className="game-bottom-bar">
-        <div className="balance-display">${balance}</div>
         <div
           className="bet-panel-wrapper"
           style={{ opacity: isBetting ? 1 : 0.3, pointerEvents: isBetting ? 'auto' : 'none' }}
@@ -163,27 +166,29 @@ export default function GamePage({ user, onLogout }) {
           />
         </div>
 
-        <div
-          className="insurance-wrapper"
-          style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
-        >
-          <div className="insurance-panel">
-            <button onClick={() => insurance(true)} disabled={loading || animating || !isInsurance}>
-              Yes <kbd>Y</kbd>
-            </button>
-            <button onClick={() => insurance(false)} disabled={loading || animating || !isInsurance}>
-              No <kbd>N</kbd>
+        <div className="bottom-row">
+          <div
+            className="insurance-wrapper"
+            style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
+          >
+            <div className="insurance-panel">
+              <button className="insurance-btn-yes" onClick={() => insurance(true)} disabled={loading || animating || !isInsurance}>
+                Insurance <kbd>Y</kbd>
+              </button>
+              <button className="insurance-btn-no" onClick={() => insurance(false)} disabled={loading || animating || !isInsurance}>
+                No Insurance <kbd>N</kbd>
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="new-round-wrapper"
+            style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
+          >
+            <button className="new-round-btn" onClick={newRound} disabled={loading || animating || !isResolved}>
+              New Round <kbd>N</kbd>
             </button>
           </div>
-        </div>
-
-        <div
-          className="new-round-wrapper"
-          style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
-        >
-          <button className="new-round-btn" onClick={newRound} disabled={loading || animating || !isResolved}>
-            New Round <kbd>N</kbd>
-          </button>
         </div>
       </div>
     </div>

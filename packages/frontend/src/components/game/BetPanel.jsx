@@ -5,6 +5,10 @@ import { chipFlatPath } from '../../utils/chipConfig.js';
 export default function BetPanel({ balance, betAmount, onAddChip, onDeal, onClearBet, disabled }) {
   return (
     <div className="bet-panel">
+      <div className="balance-display">
+        <span className="balance-label">Balance</span>
+        <span className="balance-amount">${balance}</span>
+      </div>
       <div className="chips">
         {CHIP_VALUES.map((value, index) => {
           const wouldExceed = betAmount + value > Math.min(balance, MAX_BET);

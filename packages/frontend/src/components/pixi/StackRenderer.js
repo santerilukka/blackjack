@@ -1,7 +1,7 @@
 import { Container, Text } from 'pixi.js';
 import { createCardSprite } from './CardSprite.js';
 
-const STACK_CARD_HEIGHT = 100;
+const STACK_CARD_HEIGHT = 116;
 const STACK_LAYER_OFFSET = 3;
 const STACK_MAX_LAYERS = 5;
 
