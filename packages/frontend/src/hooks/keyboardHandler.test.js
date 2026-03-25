@@ -16,10 +16,10 @@ describe('resolveKeyAction', () => {
   describe('betting phase', () => {
     const phase = PHASES.BETTING;
 
-    it('selects chip with number keys 1-5', () => {
+    it('places chip with number keys 1-5', () => {
       for (let i = 0; i < CHIP_VALUES.length; i++) {
         const result = resolveKeyAction(String(i + 1), phase, []);
-        expect(result).toEqual({ type: 'selectChip', payload: CHIP_VALUES[i] });
+        expect(result).toEqual({ type: 'addChip', payload: CHIP_VALUES[i] });
       }
     });
 
@@ -29,12 +29,16 @@ describe('resolveKeyAction', () => {
       expect(resolveKeyAction('9', phase, [])).toBeNull();
     });
 
-    it('places bet with "b"', () => {
-      expect(resolveKeyAction('b', phase, [])).toEqual({ type: 'placeBet' });
+    it('ignores "b" key during betting (no longer used)', () => {
+      expect(resolveKeyAction('b', phase, [])).toBeNull();
     });
 
-    it('places bet with "enter"', () => {
-      expect(resolveKeyAction('enter', phase, [])).toEqual({ type: 'placeBet' });
+    it('deals with "enter"', () => {
+      expect(resolveKeyAction('enter', phase, [])).toEqual({ type: 'deal' });
+    });
+
+    it('clears bet with "c"', () => {
+      expect(resolveKeyAction('c', phase, [])).toEqual({ type: 'clearBet' });
     });
 
     it('ignores player-turn keys during betting', () => {

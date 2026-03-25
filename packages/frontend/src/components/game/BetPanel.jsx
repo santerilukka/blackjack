@@ -1,38 +1,40 @@
-import { SHORTCUTS } from '@blackjack/shared';
+import { SHORTCUTS, MAX_BET } from '@blackjack/shared';
 import { CHIP_VALUES } from '../../hooks/keyboardHandler.js';
 import { chipFlatPath } from '../../utils/chipConfig.js';
 
-export default function BetPanel({ balance, betAmount, onBetAmountChange, onPlaceBet, disabled }) {
-  function handleBet() {
-    if (betAmount > 0 && betAmount <= balance) {
-      onPlaceBet(betAmount);
-    }
-  }
-
+export default function BetPanel({ balance, betAmount, onAddChip, onDeal, onClearBet, disabled }) {
   return (
     <div className="bet-panel">
       <div className="chips">
-        {CHIP_VALUES.map((value, index) => (
-          <button
-            key={value}
-            className={`chip-btn ${betAmount === value ? 'selected' : ''}`}
-            onClick={() => onBetAmountChange(value)}
-            disabled={disabled}
-          >
-            <span className="chip-denomination">${value}</span>
-            <img
-              src={chipFlatPath(value)}
-              alt={`$${value} chip`}
-              className="chip-img"
-              draggable={false}
-            />
-            <span className="chip-hint">{index + 1}</span>
-          </button>
-        ))}
+        {CHIP_VALUES.map((value, index) => {
+          const wouldExceed = betAmount + value > Math.min(balance, MAX_BET);
+          return (
+            <button
+              key={value}
+              className="chip-btn"
+              onClick={() => onAddChip(value)}
+              disabled={disabled || wouldExceed}
+            >
+              <span className="chip-denomination">${value}</span>
+              <img
+                src={chipFlatPath(value)}
+                alt={`$${value} chip`}
+                className="chip-img"
+                draggable={false}
+              />
+              <span className="chip-hint">{index + 1}</span>
+            </button>
+          );
+        })}
       </div>
-      <button className="deal-btn" onClick={handleBet} disabled={disabled || betAmount <= 0}>
-        Deal (${betAmount}) <kbd>{SHORTCUTS.BET.label}</kbd>
-      </button>
+      <div className="bet-controls">
+        <button className="clear-btn" onClick={onClearBet} disabled={disabled || betAmount <= 0}>
+          Clear <kbd>C</kbd>
+        </button>
+        <button className="deal-btn" onClick={onDeal} disabled={disabled || betAmount <= 0}>
+          Deal (${betAmount}) <kbd>{SHORTCUTS.DEAL.label}</kbd>
+        </button>
+      </div>
     </div>
   );
 }

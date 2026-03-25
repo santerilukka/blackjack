@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { PHASES } from '@blackjack/shared';
 import { usePixiApp } from '../../hooks/usePixiApp.js';
 import { TableScene } from './TableScene.js';
@@ -10,17 +10,24 @@ const CANVAS_HEIGHT = 900;
  * React wrapper that hosts the PixiJS canvas.
  * Receives gameState and syncs the TableScene whenever it changes.
  *
- * The PixiJS coordinate system is always 800x500. Responsive scaling is handled
+ * The PixiJS coordinate system is always 1600x900. Responsive scaling is handled
  * via CSS transform on the wrapper div, driven by a ResizeObserver on the parent.
  *
+ * Exposes imperative methods for bet chip placement via forwardRef.
  * Never import PixiJS directly in other React components — use this bridge.
  */
-export default function PixiCanvas({ gameState, npcCount = 0, onAnimatingChange }) {
+const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onAnimatingChange }, ref) {
   const { canvasRef, app, ready } = usePixiApp({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
   const sceneRef = useRef(null);
   const parentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const onAnimatingChangeRef = useRef(onAnimatingChange);
+
+  // Expose imperative bet chip methods to parent
+  useImperativeHandle(ref, () => ({
+    addBetChip: (denom) => sceneRef.current?.addBetChip(denom),
+    clearBetChips: () => sceneRef.current?.clearBetChips(),
+  }), []);
 
   // Responsive scaling via ResizeObserver on the parent element
   useEffect(() => {
@@ -90,4 +97,6 @@ export default function PixiCanvas({ gameState, npcCount = 0, onAnimatingChange 
       />
     </div>
   );
-}
+});
+
+export default PixiCanvas;

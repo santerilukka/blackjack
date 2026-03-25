@@ -10,12 +10,12 @@ export const SHORTCUTS = {
   SURRENDER:  { key: 'r', label: 'R', description: 'Surrender' },
   INSURANCE_YES: { key: 'y', label: 'Y', description: 'Accept insurance' },
   INSURANCE_NO:  { key: 'n', label: 'N', description: 'Decline insurance' },
-  BET:        { key: 'b', label: 'B', description: 'Place bet / deal' },
+  DEAL:       { key: 'enter', label: 'Enter', description: 'Deal' },
   NEW_ROUND:  { key: 'n', label: 'N', description: 'New round' },
   MENU:       { key: 'm', label: 'M', description: 'Toggle menu' },
   CLOSE_MENU: { key: 'escape', label: 'Esc', description: 'Close menu' },
   LOGOUT:     { key: 'l', label: 'L', description: 'Log out (in menu)' },
 };
 
-/** Chip selection uses number keys 1-5 */
-export const CHIP_SHORTCUT_DESCRIPTION = 'Select chip ($5-$100)';
+/** Chip placement uses number keys 1-5 */
+export const CHIP_SHORTCUT_DESCRIPTION = 'Place chip ($5-$100)';

@@ -22,10 +22,13 @@ export function resolveKeyAction(key, phase, availableActions) {
   if (phase === PHASES.BETTING) {
     const chipIndex = parseInt(key, 10) - 1;
     if (chipIndex >= 0 && chipIndex < CHIP_VALUES.length) {
-      return { type: 'selectChip', payload: CHIP_VALUES[chipIndex] };
+      return { type: 'addChip', payload: CHIP_VALUES[chipIndex] };
     }
-    if (key === SHORTCUTS.BET.key || key === 'enter') {
-      return { type: 'placeBet' };
+    if (key === 'enter') {
+      return { type: 'deal' };
+    }
+    if (key === 'c') {
+      return { type: 'clearBet' };
     }
   }
 

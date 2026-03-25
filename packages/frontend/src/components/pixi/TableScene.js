@@ -353,6 +353,22 @@ export class TableScene {
     this.betSpot.update(amount);
   }
 
+  /**
+   * Add a single chip to the bet spot with animation (called from React during betting).
+   * @param {number} denomination
+   * @returns {Promise<void>}
+   */
+  addBetChip(denomination) {
+    return this.betSpot.addChip(denomination, this.app);
+  }
+
+  /**
+   * Clear all preview chips from the bet spot (called from React on "Clear Bets").
+   */
+  clearBetChips() {
+    this.betSpot.clearChips();
+  }
+
   /** @param {number} shoeSize @param {number} cardsOnTable */
   updateStacks(shoeSize, cardsOnTable) {
     this._updateStacksInternal(shoeSize, cardsOnTable);

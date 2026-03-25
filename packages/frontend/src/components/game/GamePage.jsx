@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { PHASES } from '@blackjack/shared';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { PHASES, MAX_BET } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
 import StatusBar from './StatusBar.jsx';
@@ -25,16 +25,42 @@ export default function GamePage({ user, onLogout }) {
   } = useGameState();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [betAmount, setBetAmount] = useState(10);
+  const [betAmount, setBetAmount] = useState(0);
   const [animating, setAnimating] = useState(false);
+  const chipHistoryRef = useRef([]);
+  const pixiRef = useRef(null);
   const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
   const handleAnimatingChange = useCallback((busy) => setAnimating(busy), []);
+
+  const addChip = useCallback((chipValue) => {
+    const cap = Math.min(gameState?.balance ?? Infinity, MAX_BET);
+    const currentTotal = chipHistoryRef.current.reduce((s, v) => s + v, 0);
+    if (currentTotal + chipValue > cap) return;
+
+    chipHistoryRef.current = [...chipHistoryRef.current, chipValue];
+    setBetAmount(currentTotal + chipValue);
+    pixiRef.current?.addBetChip(chipValue);
+  }, [gameState?.balance]);
+
+  const clearBet = useCallback(() => {
+    chipHistoryRef.current = [];
+    setBetAmount(0);
+    pixiRef.current?.clearBetChips();
+  }, []);
 
   useEffect(() => {
     startSession();
   }, []);
 
-  const doBet = useCallback(() => {
+  // Reset bet when returning to betting phase (new round)
+  useEffect(() => {
+    if (gameState?.phase === PHASES.BETTING) {
+      setBetAmount(0);
+      chipHistoryRef.current = [];
+    }
+  }, [gameState?.phase]);
+
+  const doDeal = useCallback(() => {
     if (gameState && betAmount > 0 && betAmount <= gameState.balance) {
       placeBet(betAmount);
     }
@@ -44,6 +70,7 @@ export default function GamePage({ user, onLogout }) {
     if (!gameState || loading || animating) return;
 
     function handleKeyDown(e) {
+      if (e.repeat) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       const action = resolveKeyAction(
@@ -57,8 +84,9 @@ export default function GamePage({ user, onLogout }) {
 
       switch (action.type) {
         case 'toggleMenu': toggleMenu(); break;
-        case 'selectChip': setBetAmount(action.payload); break;
-        case 'placeBet': doBet(); break;
+        case 'addChip': addChip(action.payload); break;
+        case 'deal': doDeal(); break;
+        case 'clearBet': clearBet(); break;
         case 'hit': hit(); break;
         case 'stand': stand(); break;
         case 'double': double(); break;
@@ -72,7 +100,7 @@ export default function GamePage({ user, onLogout }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, newRound, toggleMenu, doBet]);
+  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, newRound, toggleMenu, doDeal, addChip, clearBet]);
 
   if (!gameState) {
     return <div className="game-page">Loading...</div>;
@@ -104,7 +132,7 @@ export default function GamePage({ user, onLogout }) {
       {error && <div className="error">{error}</div>}
 
       <div className="game-canvas-area">
-        <PixiCanvas gameState={gameState} onAnimatingChange={handleAnimatingChange} />
+        <PixiCanvas ref={pixiRef} gameState={gameState} onAnimatingChange={handleAnimatingChange} />
       </div>
 
       <div className="game-bottom-bar">
@@ -115,8 +143,9 @@ export default function GamePage({ user, onLogout }) {
           <BetPanel
             balance={balance}
             betAmount={betAmount}
-            onBetAmountChange={setBetAmount}
-            onPlaceBet={placeBet}
+            onAddChip={addChip}
+            onDeal={doDeal}
+            onClearBet={clearBet}
             disabled={loading || animating || !isBetting}
           />
         </div>
