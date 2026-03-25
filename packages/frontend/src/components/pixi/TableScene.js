@@ -1,12 +1,12 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import { createCardSprite, loadCardSpritesheet } from './CardSprite.js';
+import { createCardSprite, getCardTexture, loadCardSpritesheet } from './CardSprite.js';
 import { loadChipTextures } from './ChipSprite.js';
 import { AnimationQueue } from './AnimationQueue.js';
 import { BetSpot } from './BetSpot.js';
 import { StackRenderer } from './StackRenderer.js';
 import { diffGameState } from './tableDiff.js';
 import { executeCommands } from './commandExecutor.js';
-import { tween } from './tween.js';
+import { tween, easeOutCubic, easeOutQuad } from './tween.js';
 import { SeatMarker, computeSeatPositions } from './SeatMarker.js';
 
 const CARD_HEIGHT = 120;
@@ -331,6 +331,28 @@ export class TableScene {
     await this._addCards(this.dealerCards, cards, addHidden);
   }
 
+  /**
+   * Flip the dealer's hidden card to reveal the actual card.
+   * @param {number} index - Index of the card in the dealer container
+   * @param {{ rank: string, suit: string }} card - The revealed card
+   */
+  async revealDealerCard(index, card) {
+    const sprite = this.dealerCards.children[index];
+    if (!sprite) return;
+
+    const texture = await getCardTexture(card);
+
+    // Squeeze to edge
+    await tween(sprite, { scaleX: 0 }, 200, this.app, { easing: easeOutQuad });
+
+    // Swap texture
+    sprite.texture = texture;
+
+    // Expand back to normal scale
+    const targetScaleX = CARD_HEIGHT / texture.height;
+    await tween(sprite, { scaleX: targetScaleX }, 200, this.app, { easing: easeOutQuad });
+  }
+
   /** @param {Array<{rank: string, suit: string}>} cards */
   async addPlayerCards(cards, addHidden) {
     await this._addCards(this.playerCards, cards, addHidden);
@@ -471,28 +493,8 @@ export class TableScene {
    */
   async _renderHand(container, cards, appendHidden) {
     container.removeChildren();
-
-    let i = 0;
-    for (const card of cards) {
-      const sprite = await createCardSprite(card, { height: CARD_HEIGHT });
-      sprite.x = i * CARD_OVERLAP;
-      sprite.y = 0;
-      sprite.alpha = 0;
-      container.addChild(sprite);
-      await tween(sprite, { alpha: 1 }, 200, this.app);
-      i++;
-    }
-
-    if (appendHidden) {
-      const hidden = await createCardSprite(null, { height: CARD_HEIGHT });
-      hidden.x = i * CARD_OVERLAP;
-      hidden.y = 0;
-      hidden.alpha = 0;
-      container.addChild(hidden);
-      await tween(hidden, { alpha: 1 }, 200, this.app);
-    }
-
-    this._centerHand(container);
+    container.pivot.x = 0;
+    await this._addCards(container, cards, appendHidden);
   }
 
   /**
@@ -507,23 +509,39 @@ export class TableScene {
 
     for (const card of newCards) {
       const sprite = await createCardSprite(card, { height: CARD_HEIGHT });
-      sprite.x = i * CARD_OVERLAP;
-      sprite.y = 0;
+      const targetX = i * CARD_OVERLAP;
+      const targetY = 0;
+
+      // Place at shoe position in container-local coords
+      sprite.x = LAYOUT.shoe.x - container.x + container.pivot.x;
+      sprite.y = LAYOUT.shoe.y - container.y;
       sprite.alpha = 0;
       container.addChild(sprite);
-      await tween(sprite, { alpha: 1 }, 200, this.app);
-      i++;
       this._centerHand(container);
+
+      // Recompute start position after pivot change
+      sprite.x = LAYOUT.shoe.x - container.x + container.pivot.x;
+      sprite.y = LAYOUT.shoe.y - container.y;
+
+      await tween(sprite, { x: targetX, y: targetY, alpha: 1 }, 350, this.app, { easing: easeOutCubic });
+      i++;
     }
 
     if (appendHidden) {
       const hidden = await createCardSprite(null, { height: CARD_HEIGHT });
-      hidden.x = i * CARD_OVERLAP;
-      hidden.y = 0;
+      const targetX = i * CARD_OVERLAP;
+      const targetY = 0;
+
+      hidden.x = LAYOUT.shoe.x - container.x + container.pivot.x;
+      hidden.y = LAYOUT.shoe.y - container.y;
       hidden.alpha = 0;
       container.addChild(hidden);
-      await tween(hidden, { alpha: 1 }, 200, this.app);
       this._centerHand(container);
+
+      hidden.x = LAYOUT.shoe.x - container.x + container.pivot.x;
+      hidden.y = LAYOUT.shoe.y - container.y;
+
+      await tween(hidden, { x: targetX, y: targetY, alpha: 1 }, 350, this.app, { easing: easeOutCubic });
     }
   }
 }

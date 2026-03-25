@@ -36,7 +36,18 @@ export function diffGameState(prev, gameState) {
     const needsFullRedraw = prev.dealerCards.length > 0 &&
       !isPrefix(prev.dealerCards, dealerCardKeys);
 
-    if (needsFullRedraw) {
+    // Detect dealer reveal: previous had 'hidden' as last key, now replaced with actual card
+    const isReveal = needsFullRedraw &&
+      prev.dealerCards.length >= 2 &&
+      prev.dealerCards[prev.dealerCards.length - 1] === 'hidden' &&
+      isPrefix(prev.dealerCards.slice(0, -1), dealerCardKeys);
+
+    if (isReveal) {
+      const revealIndex = prev.dealerCards.length - 1;
+      const revealedCard = dealerHand.cards[revealIndex];
+      const extraCards = dealerHand.cards.slice(prev.dealerCards.length);
+      dealerCmd = { type: 'reveal', revealIndex, revealedCard, extraCards };
+    } else if (needsFullRedraw) {
       dealerCmd = { type: 'redraw', cards: dealerHand.cards, showHidden: showDealerHidden };
     } else {
       const newCards = dealerHand.cards.slice(prev.dealerCards.length);

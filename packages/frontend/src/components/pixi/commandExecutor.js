@@ -3,6 +3,7 @@ import { formatHandTotal, formatDealerTotal } from './tableDiff.js';
 /**
  * @typedef {object} Renderer
  * @property {(cards: Array<{rank: string, suit: string}>, showHidden: boolean) => Promise<void>} redrawDealerHand
+ * @property {(index: number, card: {rank: string, suit: string}) => Promise<void>} revealDealerCard
  * @property {(cards: Array<{rank: string, suit: string}>, addHidden: boolean) => Promise<void>} addDealerCards
  * @property {(cards: Array<{rank: string, suit: string}>, addHidden: boolean) => Promise<void>} addPlayerCards
  * @property {(text: string) => void} updatePlayerTotal
@@ -27,6 +28,11 @@ export async function executeCommands({ dealerCmd, playerCmd, showDealerHidden, 
   if (dealerCmd) {
     if (dealerCmd.type === 'redraw') {
       await renderer.redrawDealerHand(dealerCmd.cards, dealerCmd.showHidden);
+    } else if (dealerCmd.type === 'reveal') {
+      await renderer.revealDealerCard(dealerCmd.revealIndex, dealerCmd.revealedCard);
+      if (dealerCmd.extraCards.length > 0) {
+        await renderer.addDealerCards(dealerCmd.extraCards, false);
+      }
     } else {
       await renderer.addDealerCards(dealerCmd.cards, dealerCmd.addHidden);
     }

@@ -53,6 +53,17 @@ export function cardFrameName(card) {
  * @param {{ height?: number }} options
  * @returns {Promise<Sprite>}
  */
+/**
+ * Get the texture for a card from the cached spritesheet.
+ * @param {{ rank: string, suit: string } | null} card  null = face-down
+ * @returns {Promise<Texture>}
+ */
+export async function getCardTexture(card) {
+  const sheet = await loadCardSpritesheet();
+  const frame = cardFrameName(card);
+  return sheet.textures[frame] || Texture.WHITE;
+}
+
 export async function createCardSprite(card, { height = 140 } = {}) {
   const sheet = await loadCardSpritesheet();
   const frame = cardFrameName(card);

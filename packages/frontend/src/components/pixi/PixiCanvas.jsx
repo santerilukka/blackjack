@@ -21,6 +21,7 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
   const sceneRef = useRef(null);
   const parentRef = useRef(null);
   const [scale, setScale] = useState(1);
+  const [sceneReady, setSceneReady] = useState(false);
   const onAnimatingChangeRef = useRef(onAnimatingChange);
 
   // Expose imperative bet chip methods to parent
@@ -59,16 +60,18 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
       onAnimatingChangeRef.current?.(busy);
     };
     sceneRef.current = scene;
+    setSceneReady(true);
 
     return () => {
       scene.destroy();
       sceneRef.current = null;
+      setSceneReady(false);
     };
   }, [ready, app, npcCount]);
 
   // Sync game state into the scene
   useEffect(() => {
-    if (!sceneRef.current || !gameState) return;
+    if (!sceneReady || !sceneRef.current || !gameState) return;
 
     // Clear the scene when returning to betting phase (new round)
     if (gameState.phase === PHASES.BETTING && gameState.playerHand.cards.length === 0) {
@@ -77,7 +80,7 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
     }
 
     sceneRef.current.update(gameState);
-  }, [gameState]);
+  }, [gameState, sceneReady]);
 
   return (
     <div ref={parentRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
