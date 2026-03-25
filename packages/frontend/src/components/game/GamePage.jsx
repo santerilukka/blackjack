@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { PHASES, MAX_BET } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
-import StatusBar from './StatusBar.jsx';
 import BetPanel from './BetPanel.jsx';
 import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
@@ -106,7 +105,7 @@ export default function GamePage({ user, onLogout }) {
     return <div className="game-page">Loading...</div>;
   }
 
-  const { phase, balance, currentBet, message } = gameState;
+  const { phase, balance } = gameState;
   const isBetting = phase === PHASES.BETTING;
   const isPlayerTurn = phase === PHASES.PLAYER_TURN;
   const isInsurance = phase === PHASES.INSURANCE;
@@ -127,8 +126,6 @@ export default function GamePage({ user, onLogout }) {
         onLogout={onLogout}
       />
 
-      <StatusBar balance={balance} currentBet={currentBet} message={message} phase={phase} />
-
       {error && <div className="error">{error}</div>}
 
       <div className="game-canvas-area">
@@ -136,6 +133,7 @@ export default function GamePage({ user, onLogout }) {
       </div>
 
       <div className="game-bottom-bar">
+        <div className="balance-display">${balance}</div>
         <div
           className="bet-panel-wrapper"
           style={{ opacity: isBetting ? 1 : 0.3, pointerEvents: isBetting ? 'auto' : 'none' }}

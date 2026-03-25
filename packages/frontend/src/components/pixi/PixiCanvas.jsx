@@ -80,6 +80,13 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
     }
 
     sceneRef.current.update(gameState);
+
+    // Show or hide message overlay
+    if (gameState.message) {
+      sceneRef.current.showMessage(gameState.message);
+    } else {
+      sceneRef.current.hideMessage();
+    }
   }, [gameState, sceneReady]);
 
   return (

@@ -89,6 +89,31 @@ export class TableScene {
     this.betSpot = new BetSpot(LAYOUT.bet.x, LAYOUT.bet.y);
     this.root.addChild(this.betSpot.container);
 
+    // Message overlay (centered between dealer and player areas)
+    this._messageText = new Text({
+      text: '',
+      style: {
+        fill: '#ffffff',
+        fontSize: 42,
+        fontFamily: 'Georgia, serif',
+        fontWeight: 'bold',
+        letterSpacing: 2,
+        align: 'center',
+        dropShadow: {
+          color: '#000000',
+          distance: 3,
+          blur: 4,
+        },
+      },
+    });
+    this._messageText.anchor = { x: 0.5, y: 0.5 };
+    this._messageText.x = 800;
+    this._messageText.y = 400;
+    this._messageText.alpha = 0;
+    this._messageText.visible = false;
+    this.root.addChild(this._messageText);
+    this._currentMessage = '';
+
     /** Track what's currently rendered to diff against new state */
     this._renderedState = { dealerCards: [], playerCards: [], phase: null };
     this._shoeSize = 0;
@@ -319,6 +344,40 @@ export class TableScene {
     }
   }
 
+  /**
+   * Display a result message as an animated overlay centered on the table.
+   * @param {string} text
+   */
+  showMessage(text) {
+    if (!text || text === this._currentMessage) return;
+    this._currentMessage = text;
+
+    this.animationQueue.enqueue(async () => {
+      this._messageText.text = text;
+      this._messageText.visible = true;
+      this._messageText.alpha = 0;
+      this._messageText.scale.set(0.5);
+      // Ensure message renders on top of cards
+      this.root.setChildIndex(this._messageText, this.root.children.length - 1);
+
+      await tween(this._messageText, { alpha: 1, scaleX: 1, scaleY: 1 }, 400, this.app, { easing: easeOutCubic });
+    });
+  }
+
+  /**
+   * Hide the message overlay with a fade-out animation.
+   */
+  hideMessage() {
+    if (!this._currentMessage) return;
+    this._currentMessage = '';
+
+    this.animationQueue.enqueue(async () => {
+      await tween(this._messageText, { alpha: 0 }, 250, this.app, { easing: easeOutQuad });
+      this._messageText.visible = false;
+      this._messageText.text = '';
+    });
+  }
+
   // --- Renderer interface implementation ---
 
   /** @param {Array<{rank: string, suit: string}>} cards */
@@ -439,6 +498,11 @@ export class TableScene {
     this._updateBadge(this.dealerTotal);
     this.playerTotal._label.text = '';
     this._updateBadge(this.playerTotal);
+
+    this._messageText.alpha = 0;
+    this._messageText.visible = false;
+    this._messageText.text = '';
+    this._currentMessage = '';
 
     if (shoeSize != null) {
       this._updateStacksInternal(shoeSize, 0);
