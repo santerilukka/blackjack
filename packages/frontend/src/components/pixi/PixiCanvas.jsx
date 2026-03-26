@@ -23,6 +23,7 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
   const [scale, setScale] = useState(1);
   const [sceneReady, setSceneReady] = useState(false);
   const onAnimatingChangeRef = useRef(onAnimatingChange);
+  const shuffleAnimatedRef = useRef(false);
 
   // Expose imperative bet chip methods to parent
   useImperativeHandle(ref, () => ({
@@ -84,10 +85,22 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
 
     // Clear the scene when returning to betting phase (new round)
     if (gameState.phase === PHASES.BETTING && gameState.playerHand.cards.length === 0) {
+      if (gameState.reshuffled && !shuffleAnimatedRef.current) {
+        shuffleAnimatedRef.current = true;
+        const showCollect = (sceneRef.current._discardCount || 0) > 0;
+        // Clear without updating stacks so shoe appears unchanged during animation
+        sceneRef.current.clear();
+        sceneRef.current.playShuffle({ showCollect }).then(() => {
+          sceneRef.current._updateStacksInternal(gameState.shoeSize, 0);
+        });
+        return;
+      }
+      shuffleAnimatedRef.current = false;
       sceneRef.current.clear(gameState.shoeSize);
       return;
     }
 
+    shuffleAnimatedRef.current = false;
     sceneRef.current.update(gameState);
   }, [gameState, sceneReady]);
 

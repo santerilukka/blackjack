@@ -14,7 +14,7 @@ export const TABLES = [
   {
     id: 'classic-1v1',
     name: 'Classic Table',
-    description: '1-on-1 with the dealer. Standard rules, 6-deck shoe.',
+    description: '1-on-1 with the dealer. Standard rules. 6-deck shoe.',
     minBet: 5,
     maxBet: 500,
     maxPlayers: 1,

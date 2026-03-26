@@ -141,7 +141,7 @@ router.post('/new-round',
       coins = addCoins(username, coinsEarned);
     }
 
-    const { state: newState, deck } = startNewRound(prevState, req.deck);
+    const { state: newState, deck } = startNewRound(prevState, req.deck, req.tableRules);
     commitState(req, req.gameSessionId, newState, deck);
     res.json({ ...newState, coins, coinsEarned });
   },

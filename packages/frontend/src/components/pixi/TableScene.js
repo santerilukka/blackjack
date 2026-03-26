@@ -8,6 +8,7 @@ import { diffGameState } from './tableDiff.js';
 import { executeCommands } from './commandExecutor.js';
 import { tween, easeOutCubic, easeOutQuad } from './tween.js';
 import { SeatMarker, computeSeatPositions } from './SeatMarker.js';
+import { playShuffleAnimation } from './ShuffleAnimation.js';
 
 const CARD_HEIGHT = 140;
 const CARD_OVERLAP = 44;
@@ -778,6 +779,24 @@ export class TableScene {
    * Remove all cards from the scene (e.g. new round).
    * @param {number} [shoeSize]
    */
+  /**
+   * Enqueue a casino-style shuffle animation.
+   * @param {{ showCollect?: boolean }} options
+   * @returns {Promise<void>} Resolves when animation completes
+   */
+  playShuffle({ showCollect = false } = {}) {
+    return new Promise(resolve => {
+      this.animationQueue.enqueue(async () => {
+        await playShuffleAnimation({
+          app: this.app,
+          root: this.root,
+          showCollect,
+        });
+        resolve();
+      });
+    });
+  }
+
   clear(shoeSize) {
     this.animationQueue.clear();
     this.clearSplitMode();

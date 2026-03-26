@@ -221,7 +221,7 @@ export function resolveInsurance(state, deck, accept, rules = DEFAULT_RULES) {
  * @param {import('./deck.js').Deck} deck
  * @returns {{ state: import('@blackjack/shared').GameState, deck: import('./deck.js').Deck }}
  */
-export function startNewRound(state, deck) {
+export function startNewRound(state, deck, rules = DEFAULT_RULES) {
   // Collect table cards into discard pile
   let currentDeck = deck;
   if (state.playerHands) {
@@ -236,6 +236,13 @@ export function startNewRound(state, deck) {
     currentDeck = currentDeck.collect([state.dealerHand.hiddenCard]);
   }
 
+  // Check if shoe needs reshuffling based on penetration threshold
+  let reshuffled = false;
+  if (currentDeck.needsReshuffle(rules)) {
+    currentDeck = currentDeck.reshuffle();
+    reshuffled = true;
+  }
+
   return {
     state: {
       ...state,
@@ -247,9 +254,10 @@ export function startNewRound(state, deck) {
       insuranceBet: null,
       playerHands: null,
       activeHandIndex: 0,
-      message: 'Place your bet to begin.',
+      message: reshuffled ? 'Shuffling...' : 'Place your bet to begin.',
       shoeSize: currentDeck.size,
       availableActions: [],
+      reshuffled,
     },
     deck: currentDeck,
   };

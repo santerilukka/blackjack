@@ -1,5 +1,5 @@
 import { DEFAULT_RULES } from '@blackjack/shared';
-import { createShoe, drawCard } from './shoe.js';
+import { createShoe, drawCard, needsReshuffle, shuffle } from './shoe.js';
 
 /**
  * Immutable shoe + discard pile manager.
@@ -49,5 +49,24 @@ export class Deck {
   collect(cards) {
     if (cards.length === 0) return this;
     return new Deck(this.shoe, [...this.discard, ...cards]);
+  }
+
+  /**
+   * Check if shoe needs reshuffling based on penetration threshold.
+   * @param {import('@blackjack/shared').RuleConfig} [rules]
+   * @returns {boolean}
+   */
+  needsReshuffle(rules = DEFAULT_RULES) {
+    return needsReshuffle(this.shoe, rules);
+  }
+
+  /**
+   * Combine shoe and discard pile, shuffle, and return a fresh Deck.
+   * @returns {Deck}
+   */
+  reshuffle() {
+    const combined = [...this.shoe, ...this.discard];
+    shuffle(combined);
+    return new Deck(combined, []);
   }
 }
