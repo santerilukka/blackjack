@@ -169,6 +169,38 @@ export class BetSpot {
   }
 
   /**
+   * Populate the bet spot with an animated fling for the full amount.
+   * Each chip arcs in from below (like addChip) with staggered timing.
+   * @param {number} amount
+   * @param {import('pixi.js').Application} app
+   * @returns {Promise<void>}
+   */
+  async flingChips(amount, app) {
+    if (amount <= 0) return;
+
+    // Reset state
+    this._chips = [];
+    this._chipWrappers = [];
+    this._currentBet = 0;
+    this._totalLabel = null;
+    this._totalBg = null;
+    this.container.removeChildren();
+
+    const chips = decomposeIntoChips(amount);
+    const flingPromises = [];
+
+    for (let idx = 0; idx < chips.length; idx++) {
+      // Stagger each chip by 40ms
+      const delay = idx * 40;
+      flingPromises.push(
+        new Promise((resolve) => setTimeout(resolve, delay)).then(() => this.addChip(chips[idx], app))
+      );
+    }
+
+    await Promise.all(flingPromises);
+  }
+
+  /**
    * Remove all chips (used for "Clear Bets").
    */
   clearChips() {

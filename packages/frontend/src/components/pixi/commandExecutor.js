@@ -31,15 +31,11 @@ export async function executeCommands({ dealerCmd, playerCmd, playerHandCmds, is
     const otherCmds = playerHandCmds.filter(c => c.type !== 'split-init' && c.type !== 'split-relocate');
 
     if (layoutCmds.length > 0) {
-      // Animate chip for the split bet (each split-init means a new bet was placed)
       const splitInitCount = layoutCmds.filter(c => c.type === 'split-init').length;
-      if (splitInitCount > 0 && gameState.playerHands) {
-        const handBet = gameState.playerHands[0]?.bet || 0;
-        if (handBet > 0) {
-          renderer.animateSplitBet(handBet);
-        }
-      }
-      await renderer.animateSplitInit(layoutCmds);
+      const perHandBet = (splitInitCount > 0 && gameState.playerHands)
+        ? (gameState.playerHands[0]?.bet || 0)
+        : 0;
+      await renderer.animateSplitInit(layoutCmds, perHandBet);
     }
 
     for (const cmd of otherCmds) {

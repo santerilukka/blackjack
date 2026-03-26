@@ -350,37 +350,6 @@ export class TableScene {
     return container;
   }
 
-  /**
-   * Create a small bet label for a split hand.
-   * @param {number} x
-   * @param {number} y
-   * @returns {Container}
-   */
-  _createBetLabel(x, y) {
-    const container = new Container();
-    container.x = x;
-    container.y = y;
-
-    const bg = new Graphics();
-    container._bg = bg;
-    container.addChild(bg);
-
-    const label = new Text({
-      text: '',
-      style: {
-        fill: '#ffffff',
-        fontSize: 16,
-        fontFamily: 'sans-serif',
-        fontWeight: 'bold',
-      },
-    });
-    label.anchor = { x: 0.5, y: 0.5 };
-    container._label = label;
-    container.addChild(label);
-
-    container.visible = false;
-    return container;
-  }
 
   /**
    * Update the bet label for a specific split hand.
@@ -389,9 +358,8 @@ export class TableScene {
    */
   updateSplitHandBet(handIndex, amount) {
     const entry = this._splitContainers[handIndex];
-    if (!entry || !entry.betLabel) return;
-    entry.betLabel._label.text = amount > 0 ? `$${amount}` : '';
-    this._updateBadge(entry.betLabel);
+    if (!entry?.betSpot) return;
+    entry.betSpot.update(amount);
   }
 
   /**
@@ -512,22 +480,24 @@ export class TableScene {
       const badge = this._createTotalBadge(x, LAYOUT.player.cardsY + CARD_HEIGHT / 2 + 16);
       this.root.addChild(badge);
 
-      // Per-hand bet label
-      const betLabel = this._createBetLabel(x, LAYOUT.player.cardsY + CARD_HEIGHT / 2 + 42);
-      this.root.addChild(betLabel);
+      // Per-hand chip stack (BetSpot)
+      const betSpot = new BetSpot(x, LAYOUT.bet.y);
+      this.root.addChild(betSpot.container);
 
-      this._splitContainers.push({ cards, badge, indicator, betLabel });
+      this._splitContainers.push({ cards, badge, indicator, betSpot });
     }
 
     this._isSplit = true;
+    this.betSpot.container.visible = false;
   }
 
   /**
    * Animate the split transition: slide existing pair cards apart, then deal new cards from shoe.
    * Handles both 'split-init' (genuinely new split) and 'split-relocate' (unchanged hand moving position).
    * @param {Array<{ handIndex: number, type: string, originalCard?: object, newCards?: Array, cards?: Array }>} layoutCmds
+   * @param {number} [perHandBet=0] - per-hand bet amount for chip animation
    */
-  async animateSplitInit(layoutCmds) {
+  async animateSplitInit(layoutCmds, perHandBet = 0) {
     const handCount = layoutCmds.length;
 
     // 1. Collect existing sprites from the correct source
@@ -602,7 +572,7 @@ export class TableScene {
       }
     }
 
-    // 5. Animate cards sliding to their target positions
+    // 5. Animate cards and chips sliding to their target positions simultaneously
     const slidePromises = layoutCmds.map((cmd, i) => {
       const container = this._splitContainers[i]?.cards;
       if (!container || container.children.length === 0) return Promise.resolve();
@@ -620,7 +590,30 @@ export class TableScene {
         return tween(sprite, { x: 0, y: 0 }, 300, this.app, { easing: easeOutCubic });
       }
     });
+
+    // Slide the original chip stack from center to the first hand's position
+    if (perHandBet > 0 && this._splitContainers[0]?.betSpot) {
+      const firstEntry = this._splitContainers[0];
+      const targetX = splitHandX(0, handCount);
+      firstEntry.betSpot.container.x = LAYOUT.bet.x;
+      firstEntry.betSpot.update(perHandBet);
+      slidePromises.push(
+        tween(firstEntry.betSpot.container, { x: targetX }, 350, this.app, { easing: easeOutCubic })
+      );
+    }
+
     await Promise.all(slidePromises);
+
+    // Fling new chips from action bar into the second (and any further) split hand bet spots
+    if (perHandBet > 0) {
+      const flingPromises = [];
+      for (let i = 1; i < handCount; i++) {
+        const entry = this._splitContainers[i];
+        if (!entry?.betSpot) continue;
+        flingPromises.push(entry.betSpot.flingChips(perHandBet, this.app));
+      }
+      await Promise.all(flingPromises);
+    }
 
     // 6. Re-center relocated hands after slide (pivot may need adjustment)
     for (let i = 0; i < layoutCmds.length; i++) {
@@ -641,16 +634,16 @@ export class TableScene {
    * Clean up split mode and restore single-hand elements.
    */
   clearSplitMode() {
-    for (const { cards, badge, indicator, betLabel } of this._splitContainers) {
+    for (const { cards, badge, indicator, betSpot } of this._splitContainers) {
       this.root.removeChild(cards);
       this.root.removeChild(badge);
       this.root.removeChild(indicator);
       cards.destroy({ children: true });
       badge.destroy({ children: true });
       indicator.destroy();
-      if (betLabel) {
-        this.root.removeChild(betLabel);
-        betLabel.destroy({ children: true });
+      if (betSpot) {
+        this.root.removeChild(betSpot.container);
+        betSpot.container.destroy({ children: true });
       }
     }
     this._splitContainers = [];
@@ -658,6 +651,7 @@ export class TableScene {
     if (this._isSplit) {
       this.playerCards.visible = true;
       this.playerTotal.visible = true;
+      this.betSpot.container.visible = true;
     }
     this._isSplit = false;
   }
@@ -733,6 +727,7 @@ export class TableScene {
 
   /** @param {number} amount */
   updateBetSpot(amount) {
+    if (this._isSplit) return;
     this.betSpot.update(amount);
   }
 
@@ -752,30 +747,6 @@ export class TableScene {
     this.betSpot.clearChips();
   }
 
-  /**
-   * Animate a chip flying from the bet spot to indicate a split bet.
-   * The chip arcs upward from the bet area and lands near the split hand area.
-   * @param {number} betAmount - the bet amount being duplicated
-   * @returns {Promise<void>}
-   */
-  async animateSplitBet(betAmount) {
-    const chips = decomposeIntoChips(betAmount);
-    const topDenom = chips[0] || 5;
-    const chipSize = 50;
-
-    const sprite = createTopChipSprite(topDenom, { size: chipSize });
-    sprite.x = LAYOUT.bet.x;
-    sprite.y = LAYOUT.bet.y;
-    sprite.alpha = 0.9;
-    this.root.addChild(sprite);
-
-    // Arc from bet spot upward toward player card area
-    const targetX = LAYOUT.bet.x;
-    const targetY = LAYOUT.bet.y - 80;
-
-    await tween(sprite, { x: targetX, y: targetY, alpha: 0 }, 400, this.app, { easing: easeOutQuad });
-    sprite.destroy();
-  }
 
   /** @param {number} shoeSize @param {number} cardsOnTable */
   updateStacks(shoeSize, cardsOnTable) {
