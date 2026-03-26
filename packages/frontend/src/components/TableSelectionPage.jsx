@@ -20,7 +20,7 @@ export default function TableSelectionPage({ user, onSelectTable, onLogout }) {
         <h1>Choose a Table</h1>
         <p className="greeting">
           Welcome, <strong>{user.username}</strong>
-          <span className="balance">${user.balance}</span>
+          <span className="balance">Balance: ${user.balance}</span>
         </p>
       </div>
 
@@ -35,7 +35,11 @@ export default function TableSelectionPage({ user, onSelectTable, onLogout }) {
             onClick={() => onSelectTable(table.id)}
           >
             <h2>{table.name}</h2>
-            <p className="table-description">{table.description}</p>
+            <p className="table-description">
+              {table.description.split('. ').map((sentence, i, arr) => (
+                <span key={i}>{sentence}{i < arr.length - 1 ? '.' : ''}</span>
+              ))}
+            </p>
             <div className="table-details">
               <span className="table-bet-range">
                 ${table.minBet} &ndash; ${table.maxBet}
