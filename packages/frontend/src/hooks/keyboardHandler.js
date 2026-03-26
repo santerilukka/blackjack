@@ -18,6 +18,11 @@ export function resolveKeyAction(key, phase, availableActions) {
     return { type: 'toggleMenu' };
   }
 
+  // Shop toggle — always available
+  if (key === SHORTCUTS.SHOP.key) {
+    return { type: 'toggleShop' };
+  }
+
   // Betting phase
   if (phase === PHASES.BETTING) {
     const chipIndex = parseInt(key, 10) - 1;

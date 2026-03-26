@@ -19,9 +19,9 @@ function cardKey(card) {
  */
 export function diffGameState(prev, gameState) {
   const { dealerHand, playerHand, phase } = gameState;
+  const isSplit = Array.isArray(gameState.playerHands) && gameState.playerHands.length >= 2;
 
   const dealerCardKeys = dealerHand.cards.map(cardKey);
-  const playerCardKeys = playerHand.cards.map(cardKey);
 
   const showDealerHidden = phase === PHASES.PLAYER_TURN;
   if (showDealerHidden) {
@@ -30,6 +30,7 @@ export function diffGameState(prev, gameState) {
 
   let dealerCmd = null;
   let playerCmd = null;
+  let playerHandCmds = null;
 
   // Dealer hand diff
   if (!arraysEqual(dealerCardKeys, prev.dealerCards)) {
@@ -56,21 +57,98 @@ export function diffGameState(prev, gameState) {
     }
   }
 
-  // Player hand diff
-  if (!arraysEqual(playerCardKeys, prev.playerCards)) {
-    const newCards = playerHand.cards.slice(prev.playerCards.length);
-    playerCmd = { type: 'add', cards: newCards, addHidden: false };
+  let newRenderedState;
+
+  if (isSplit) {
+    // --- Split mode: produce per-hand commands ---
+    const hands = gameState.playerHands;
+    const prevHandCards = prev.playerHandCards || [];
+    const wasSplit = prevHandCards.length >= 2;
+
+    // Detect layout change: first split or hand count changed (re-split)
+    const needsLayoutInit = !wasSplit || hands.length !== prevHandCards.length;
+
+    playerHandCmds = [];
+    const newPlayerHandCards = [];
+
+    for (let i = 0; i < hands.length; i++) {
+      const handCardKeys = hands[i].cards.map(cardKey);
+      newPlayerHandCards.push(handCardKeys);
+
+      const prevKeys = prevHandCards[i] || [];
+
+      if (needsLayoutInit) {
+        // Check if this hand existed unchanged in the previous layout (re-split relocate)
+        const matchesPrev = prevHandCards.some(prevHand => arraysEqual(handCardKeys, prevHand));
+        if (matchesPrev) {
+          // Hand is unchanged, just needs to move to new position
+          playerHandCmds.push({
+            handIndex: i,
+            type: 'split-relocate',
+            cards: hands[i].cards,
+          });
+        } else {
+          // Genuinely new split hand — separate original card from newly dealt cards
+          playerHandCmds.push({
+            handIndex: i,
+            type: 'split-init',
+            originalCard: hands[i].cards[0],
+            newCards: hands[i].cards.slice(1),
+          });
+        }
+      } else if (!arraysEqual(handCardKeys, prevKeys)) {
+        if (prevKeys.length > 0 && !isPrefix(prevKeys, handCardKeys)) {
+          // Hand changed completely — full redraw
+          playerHandCmds.push({
+            handIndex: i,
+            type: 'redraw',
+            cards: hands[i].cards,
+          });
+        } else {
+          // New cards appended
+          const newCards = hands[i].cards.slice(prevKeys.length);
+          playerHandCmds.push({
+            handIndex: i,
+            type: 'add',
+            cards: newCards,
+          });
+        }
+      }
+    }
+
+    newRenderedState = {
+      dealerCards: dealerCardKeys,
+      playerCards: [],
+      playerHandCards: newPlayerHandCards,
+      phase,
+    };
+  } else {
+    // --- Single-hand mode (unchanged path) ---
+    const playerCardKeys = playerHand.cards.map(cardKey);
+
+    if (!arraysEqual(playerCardKeys, prev.playerCards)) {
+      const newCards = playerHand.cards.slice(prev.playerCards.length);
+      playerCmd = { type: 'add', cards: newCards, addHidden: false };
+    }
+
+    newRenderedState = {
+      dealerCards: dealerCardKeys,
+      playerCards: playerCardKeys,
+      playerHandCards: [],
+      phase,
+    };
   }
 
   return {
     dealerCmd,
     playerCmd,
+    playerHandCmds,
+    isSplit,
+    activeHandIndex: isSplit ? gameState.activeHandIndex : -1,
+    handCount: isSplit ? gameState.playerHands.length : 0,
     showDealerHidden,
-    newRenderedState: {
-      dealerCards: dealerCardKeys,
-      playerCards: playerCardKeys,
-      phase,
-    },
+    newRenderedState,
+    gameState,
   };
 }
 

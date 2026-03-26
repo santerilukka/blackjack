@@ -29,8 +29,8 @@ describe('resolveKeyAction', () => {
       expect(resolveKeyAction('9', phase, [])).toBeNull();
     });
 
-    it('ignores "b" key during betting (no longer used)', () => {
-      expect(resolveKeyAction('b', phase, [])).toBeNull();
+    it('"b" key toggles shop during betting', () => {
+      expect(resolveKeyAction('b', phase, [])).toEqual({ type: 'toggleShop' });
     });
 
     it('deals with "enter"', () => {
@@ -73,7 +73,6 @@ describe('resolveKeyAction', () => {
     });
 
     it('ignores betting keys during player turn', () => {
-      expect(resolveKeyAction('b', phase, allActions)).toBeNull();
       expect(resolveKeyAction('1', phase, allActions)).toBeNull();
     });
 
@@ -96,8 +95,8 @@ describe('resolveKeyAction', () => {
       expect(resolveKeyAction('d', phase, [])).toBeNull();
     });
 
-    it('ignores betting keys during resolved', () => {
-      expect(resolveKeyAction('b', phase, [])).toBeNull();
+    it('"b" key toggles shop during resolved', () => {
+      expect(resolveKeyAction('b', phase, [])).toEqual({ type: 'toggleShop' });
     });
   });
 

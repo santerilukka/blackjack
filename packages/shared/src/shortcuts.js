@@ -14,6 +14,7 @@ export const SHORTCUTS = {
   NEW_ROUND:  { key: 'n', label: 'N', description: 'New round' },
   MENU:       { key: 'm', label: 'M', description: 'Toggle menu' },
   CLOSE_MENU: { key: 'escape', label: 'Esc', description: 'Close menu' },
+  SHOP:       { key: 'b', label: 'B', description: 'Toggle shop' },
   LOGOUT:     { key: 'l', label: 'L', description: 'Log out (in menu)' },
 };
 

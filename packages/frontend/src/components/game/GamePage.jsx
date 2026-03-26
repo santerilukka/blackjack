@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { PHASES, MAX_BET } from '@blackjack/shared';
+import { PHASES, MAX_BET, SHOP_ITEMS } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
 import BetPanel from './BetPanel.jsx';
 import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
+import ShopPanel from './ShopPanel.jsx';
 import PixiCanvas from '../pixi/PixiCanvas.jsx';
 
 export default function GamePage({ user, onLogout }) {
@@ -24,11 +25,21 @@ export default function GamePage({ user, onLogout }) {
   } = useGameState();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [coins, setCoins] = useState(user?.coins ?? 0);
+  const [activeFelt, setActiveFelt] = useState(user?.activeFelt ?? 'felt_green');
   const [betAmount, setBetAmount] = useState(0);
   const [animating, setAnimating] = useState(false);
   const chipHistoryRef = useRef([]);
   const pixiRef = useRef(null);
-  const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
+  const toggleMenu = useCallback(() => {
+    setMenuOpen((prev) => !prev);
+    setShopOpen(false);
+  }, []);
+  const toggleShop = useCallback(() => {
+    setShopOpen((prev) => !prev);
+    setMenuOpen(false);
+  }, []);
   const handleAnimatingChange = useCallback((busy) => setAnimating(busy), []);
 
   const addChip = useCallback((chipValue) => {
@@ -65,6 +76,18 @@ export default function GamePage({ user, onLogout }) {
     }
   }, [gameState, betAmount, placeBet]);
 
+  const handleNewRound = useCallback(async () => {
+    const result = await newRound();
+    if (result?.coins != null) {
+      setCoins(result.coins);
+    }
+  }, [newRound]);
+
+  const handleShopUpdate = useCallback(({ coins: newCoins, activeFelt: newFelt }) => {
+    if (newCoins != null) setCoins(newCoins);
+    if (newFelt != null) setActiveFelt(newFelt);
+  }, []);
+
   useEffect(() => {
     if (!gameState || loading || animating) return;
 
@@ -83,6 +106,7 @@ export default function GamePage({ user, onLogout }) {
 
       switch (action.type) {
         case 'toggleMenu': toggleMenu(); break;
+        case 'toggleShop': toggleShop(); break;
         case 'addChip': addChip(action.payload); break;
         case 'deal': doDeal(); break;
         case 'clearBet': clearBet(); break;
@@ -93,13 +117,13 @@ export default function GamePage({ user, onLogout }) {
         case 'surrender': surrender(); break;
         case 'insuranceYes': insurance(true); break;
         case 'insuranceNo': insurance(false); break;
-        case 'newRound': newRound(); break;
+        case 'newRound': handleNewRound(); break;
       }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, newRound, toggleMenu, doDeal, addChip, clearBet]);
+  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, handleNewRound, toggleMenu, toggleShop, doDeal, addChip, clearBet]);
 
   if (!gameState) {
     return <div className="game-page">Loading...</div>;
@@ -114,7 +138,10 @@ export default function GamePage({ user, onLogout }) {
   return (
     <div className="game-page">
       <button className="menu-toggle-btn" onClick={toggleMenu} aria-label="Open menu">
-        Menu (M)
+        Menu <kbd>M</kbd>
+      </button>
+      <button className="shop-toggle-btn" onClick={toggleShop} aria-label="Open shop">
+        Shop <kbd>B</kbd>
       </button>
 
       <SideMenu
@@ -126,6 +153,12 @@ export default function GamePage({ user, onLogout }) {
         onLogout={onLogout}
       />
 
+      <ShopPanel
+        open={shopOpen}
+        onClose={() => setShopOpen(false)}
+        onUpdate={handleShopUpdate}
+      />
+
       {error && <div className="error">{error}</div>}
 
       {gameState.message && (
@@ -133,7 +166,7 @@ export default function GamePage({ user, onLogout }) {
       )}
 
       <div className="game-canvas-area">
-        <PixiCanvas ref={pixiRef} gameState={gameState} onAnimatingChange={handleAnimatingChange} />
+        <PixiCanvas ref={pixiRef} gameState={gameState} onAnimatingChange={handleAnimatingChange} activeFelt={activeFelt} />
       </div>
 
       <div className="game-bottom-bar">
@@ -185,7 +218,7 @@ export default function GamePage({ user, onLogout }) {
             className="new-round-wrapper"
             style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
           >
-            <button className="new-round-btn" onClick={newRound} disabled={loading || animating || !isResolved}>
+            <button className="new-round-btn" onClick={handleNewRound} disabled={loading || animating || !isResolved}>
               New Round <kbd>N</kbd>
             </button>
           </div>

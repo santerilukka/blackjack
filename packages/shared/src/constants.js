@@ -44,3 +44,7 @@ export const MIN_BET = 5;
 export const MAX_BET = 500;
 export const NUM_DECKS = 6;
 export const RESHUFFLE_THRESHOLD = 0.25;
+
+/** Shop coin economy */
+export const COIN_RATE = 0.1;
+export const BLACKJACK_COIN_BONUS = 50;

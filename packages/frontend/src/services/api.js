@@ -51,3 +51,15 @@ export function newRound() {
 export function insurance(accept) {
   return request('/insurance', { method: 'POST', body: JSON.stringify({ accept }) });
 }
+
+export function getShop() {
+  return request('/shop');
+}
+
+export function purchaseItem(itemId) {
+  return request('/shop/purchase', { method: 'POST', body: JSON.stringify({ itemId }) });
+}
+
+export function equipItem(itemId) {
+  return request('/shop/equip', { method: 'POST', body: JSON.stringify({ itemId }) });
+}

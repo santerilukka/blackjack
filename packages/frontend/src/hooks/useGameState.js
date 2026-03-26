@@ -13,6 +13,7 @@ export function useGameState() {
     try {
       const state = await fn(...args);
       setGameState(state);
+      return state;
     } catch (err) {
       setError(err.message);
     } finally {

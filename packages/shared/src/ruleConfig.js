@@ -24,7 +24,7 @@ export const DEFAULT_RULES = {
   allow_resplit_aces: false,
   allow_hit_split_aces: false,
   double_down_on: 'any_two_cards',
-  split_requires_identical_rank: false,
+  split_requires_identical_rank: true,
   penetration: 0.75,
 };
 
