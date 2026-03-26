@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from '@blackjack/shared';
 import { logout } from '../../services/api.js';
 
-export default function SideMenu({ open, onClose, balance, phase, username, onLogout }) {
+export default function SideMenu({ open, onClose, balance, phase, username, onLogout, onLeaveTable }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -82,13 +82,18 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
           </table>
         </section>
 
-        {onLogout && (
-          <section className="side-menu-section">
+        <section className="side-menu-section">
+          {onLeaveTable && (
+            <button className="leave-table-btn" onClick={onLeaveTable}>
+              Change Table
+            </button>
+          )}
+          {onLogout && (
             <button className="logout-btn" onClick={handleLogout}>
               Log Out <kbd>{SHORTCUTS.LOGOUT.label}</kbd>
             </button>
-          </section>
-        )}
+          )}
+        </section>
       </nav>
     </>
   );

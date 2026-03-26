@@ -8,7 +8,7 @@ import SideMenu from './SideMenu.jsx';
 import ShopPanel from './ShopPanel.jsx';
 import PixiCanvas from '../pixi/PixiCanvas.jsx';
 
-export default function GamePage({ user, onLogout }) {
+export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
   const {
     gameState,
     loading,
@@ -59,7 +59,7 @@ export default function GamePage({ user, onLogout }) {
   }, []);
 
   useEffect(() => {
-    startSession();
+    startSession(tableId);
   }, []);
 
   // Reset bet when returning to betting phase (new round)
@@ -151,6 +151,7 @@ export default function GamePage({ user, onLogout }) {
         phase={phase}
         username={user?.username}
         onLogout={onLogout}
+        onLeaveTable={onLeaveTable}
       />
 
       <ShopPanel

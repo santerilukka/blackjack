@@ -1,8 +1,9 @@
 import { getSession } from '../models/sessionManager.js';
+import { getTable, getTableRules } from '../models/tableManager.js';
 
 /**
  * Middleware that rejects requests without a valid game session.
- * Enriches req with gameSessionId, gameState, and deck.
+ * Enriches req with gameSessionId, gameState, deck, tableConfig, and tableRules.
  */
 export function sessionGuard(req, res, next) {
   const sessionId = req.session?.gameSessionId;
@@ -19,5 +20,7 @@ export function sessionGuard(req, res, next) {
   req.gameSessionId = sessionId;
   req.gameState = session.state;
   req.deck = session.deck;
+  req.tableConfig = getTable(session.tableId);
+  req.tableRules = getTableRules(session.tableId);
   next();
 }

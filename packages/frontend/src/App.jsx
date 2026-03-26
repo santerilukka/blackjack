@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getMe } from './services/api.js';
 import WelcomePage from './components/WelcomePage.jsx';
+import TableSelectionPage from './components/TableSelectionPage.jsx';
 import GamePage from './components/game/GamePage.jsx';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
   const [checking, setChecking] = useState(true);
 
   // On mount, try to resume an existing session via GET /api/me
@@ -26,9 +28,24 @@ function App() {
     return <WelcomePage onLogin={setUser} />;
   }
 
+  if (!selectedTable) {
+    return (
+      <TableSelectionPage
+        user={user}
+        onSelectTable={setSelectedTable}
+        onLogout={() => setUser(null)}
+      />
+    );
+  }
+
   return (
     <div className="app">
-      <GamePage user={user} onLogout={() => setUser(null)} />
+      <GamePage
+        user={user}
+        tableId={selectedTable}
+        onLogout={() => { setUser(null); setSelectedTable(null); }}
+        onLeaveTable={() => setSelectedTable(null)}
+      />
     </div>
   );
 }

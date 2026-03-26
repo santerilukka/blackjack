@@ -28,8 +28,12 @@ export function logout() {
   return request('/logout', { method: 'POST' });
 }
 
-export function createSession() {
-  return request('/session', { method: 'POST' });
+export function createSession(tableId) {
+  return request('/session', { method: 'POST', body: JSON.stringify({ tableId }) });
+}
+
+export function getTables() {
+  return request('/tables');
 }
 
 export function getSessionState() {

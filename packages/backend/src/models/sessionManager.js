@@ -1,11 +1,13 @@
 import crypto from 'node:crypto';
 import { createDefaultGameState } from '@blackjack/shared';
 import { Deck } from '../engine/deck.js';
+import { getTableRules } from './tableManager.js';
 
 /**
  * @typedef {Object} Session
  * @property {import('@blackjack/shared').GameState} state
  * @property {import('../engine/deck.js').Deck} deck
+ * @property {string} tableId
  */
 
 /** @type {Map<string, Session>} */
@@ -14,16 +16,18 @@ const sessions = new Map();
 /**
  * Create a new game session.
  * @param {number} [initialBalance] - Override the default starting balance (e.g. from user store).
+ * @param {string} [tableId='classic-1v1'] - Table to play at.
  * @returns {Session}
  */
-export function createSession(initialBalance) {
+export function createSession(initialBalance, tableId = 'classic-1v1') {
   const sessionId = crypto.randomUUID();
   const state = createDefaultGameState(sessionId);
   if (initialBalance !== undefined) {
     state.balance = initialBalance;
   }
-  const deck = Deck.create();
-  const session = { state, deck };
+  const rules = getTableRules(tableId);
+  const deck = Deck.create(rules.num_decks);
+  const session = { state, deck, tableId };
   sessions.set(sessionId, session);
   return session;
 }

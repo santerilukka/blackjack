@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { sessionGuard } from '../middleware/sessionGuard.js';
 import { updateSession } from '../models/sessionManager.js';
 import { updateBalance, addCoins } from '../models/userManager.js';
-import { PHASES, ACTIONS, OUTCOMES, MIN_BET, MAX_BET, COIN_RATE, BLACKJACK_COIN_BONUS } from '@blackjack/shared';
+import { PHASES, ACTIONS, OUTCOMES, COIN_RATE, BLACKJACK_COIN_BONUS } from '@blackjack/shared';
 import { placeBet, resolveInsurance, startNewRound } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
 
@@ -61,15 +61,17 @@ router.post('/bet',
       return res.status(400).json({ error: 'Invalid bet amount.' });
     }
 
-    if (amount < MIN_BET) {
-      return res.status(400).json({ error: `Minimum bet is $${MIN_BET}.` });
+    const { minBet, maxBet } = req.tableConfig;
+
+    if (amount < minBet) {
+      return res.status(400).json({ error: `Minimum bet is $${minBet}.` });
     }
 
-    if (amount > MAX_BET) {
-      return res.status(400).json({ error: `Maximum bet is $${MAX_BET}.` });
+    if (amount > maxBet) {
+      return res.status(400).json({ error: `Maximum bet is $${maxBet}.` });
     }
 
-    const { state: newState, deck } = placeBet(state, req.deck, amount);
+    const { state: newState, deck } = placeBet(state, req.deck, amount, req.tableRules);
     commitState(req, req.gameSessionId, newState, deck);
     res.json(newState);
   },
@@ -93,7 +95,7 @@ router.post('/action',
       return res.status(400).json({ error: `Action not available: ${action}` });
     }
 
-    const { state: newState, deck } = executeAction(state, req.deck, action);
+    const { state: newState, deck } = executeAction(state, req.deck, action, req.tableRules);
     commitState(req, req.gameSessionId, newState, deck);
     res.json(newState);
   },
@@ -112,7 +114,7 @@ router.post('/insurance',
       return res.status(400).json({ error: 'Must specify accept: true or false.' });
     }
 
-    const { state: newState, deck } = resolveInsurance(req.gameState, req.deck, accept);
+    const { state: newState, deck } = resolveInsurance(req.gameState, req.deck, accept, req.tableRules);
     commitState(req, req.gameSessionId, newState, deck);
     res.json(newState);
   },
