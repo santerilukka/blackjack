@@ -11,7 +11,7 @@ export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrend
         className="surrender-btn"
         onClick={onSurrender}
         disabled={disabled || !canSurrender}
-        style={{ opacity: canSurrender ? 1 : 0.4 }}
+        style={{ opacity: (disabled || !canSurrender) ? 0.4 : 1 }}
       >
         Surrender <kbd>{SHORTCUTS.SURRENDER.label}</kbd>
       </button>
@@ -19,7 +19,7 @@ export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrend
         className="split-btn"
         onClick={onSplit}
         disabled={disabled || !canSplit}
-        style={{ opacity: canSplit ? 1 : 0.4 }}
+        style={{ opacity: (disabled || !canSplit) ? 0.4 : 1 }}
       >
         Split <kbd>{SHORTCUTS.SPLIT.label}</kbd>
       </button>
@@ -27,7 +27,7 @@ export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrend
         className="double-btn"
         onClick={onDouble}
         disabled={disabled || !canDouble}
-        style={{ opacity: canDouble ? 1 : 0.4 }}
+        style={{ opacity: (disabled || !canDouble) ? 0.4 : 1 }}
       >
         Double <kbd>{SHORTCUTS.DOUBLE.label}</kbd>
       </button>
