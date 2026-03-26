@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { sessionGuard } from '../middleware/sessionGuard.js';
 import { updateSession } from '../models/sessionManager.js';
-import { updateBalance } from '../models/userManager.js';
-import { PHASES, ACTIONS, MIN_BET, MAX_BET } from '@blackjack/shared';
+import { updateBalance, addCoins } from '../models/userManager.js';
+import { PHASES, ACTIONS, OUTCOMES, MIN_BET, MAX_BET, COIN_RATE, BLACKJACK_COIN_BONUS } from '@blackjack/shared';
 import { placeBet, resolveInsurance, startNewRound } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
 
@@ -120,11 +120,29 @@ router.post('/insurance',
 
 /**
  * POST /api/new-round — Start a new round after resolution.
+ * Awards coins based on the previous bet before resetting.
  */
 router.post('/new-round',
   sessionGuard,
   requirePhase(PHASES.RESOLVED, 'Can only start a new round after resolution.'),
-  gameRoute((req) => startNewRound(req.gameState, req.deck)),
+  (req, res) => {
+    const prevState = req.gameState;
+    const prevBet = prevState.currentBet || 0;
+    const wasBlackjack = prevState.outcome === OUTCOMES.BLACKJACK;
+
+    let coinsEarned = Math.ceil(prevBet * COIN_RATE);
+    if (wasBlackjack) coinsEarned += BLACKJACK_COIN_BONUS;
+
+    const username = req.session?.username;
+    let coins = 0;
+    if (username && coinsEarned > 0) {
+      coins = addCoins(username, coinsEarned);
+    }
+
+    const { state: newState, deck } = startNewRound(prevState, req.deck);
+    commitState(req, req.gameSessionId, newState, deck);
+    res.json({ ...newState, coins, coinsEarned });
+  },
 );
 
 export { router as gameRoutes };

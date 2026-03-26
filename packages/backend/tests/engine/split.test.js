@@ -6,7 +6,7 @@ import { ACTIONS, PHASES, OUTCOMES, createDefaultGameState, createRules } from '
 import { card, buildShoe, makeSplitableState } from '../helpers/testUtils.js';
 
 describe('split — pair detection', () => {
-  it('split is offered for equal-value pair (default: same value)', () => {
+  it('split is offered for identical-rank pair (default: identical rank)', () => {
     const state = createDefaultGameState('test');
     // Player: 8+8, Dealer: 5+K (no insurance, no peek)
     const deck = new Deck(buildShoe(card('8'), card('5'), card('8', 'spades'), card('K')));
@@ -16,21 +16,21 @@ describe('split — pair detection', () => {
     expect(result.availableActions).toContain(ACTIONS.SPLIT);
   });
 
-  it('split is offered for 10-J (same value, different rank) by default', () => {
+  it('split NOT offered for 10-J by default (requires identical rank)', () => {
     const state = createDefaultGameState('test');
     const deck = new Deck(buildShoe(card('10'), card('5'), card('J'), card('K')));
     const { state: result } = placeBet(state, deck, 100);
 
-    expect(result.availableActions).toContain(ACTIONS.SPLIT);
+    expect(result.availableActions).not.toContain(ACTIONS.SPLIT);
   });
 
-  it('split NOT offered for 10-J when split_requires_identical_rank', () => {
+  it('split IS offered for 10-J when split_requires_identical_rank is false', () => {
     const state = createDefaultGameState('test');
     const deck = new Deck(buildShoe(card('10'), card('5'), card('J'), card('K')));
-    const rules = createRules({ split_requires_identical_rank: true });
+    const rules = createRules({ split_requires_identical_rank: false });
     const { state: result } = placeBet(state, deck, 100, rules);
 
-    expect(result.availableActions).not.toContain(ACTIONS.SPLIT);
+    expect(result.availableActions).toContain(ACTIONS.SPLIT);
   });
 
   it('split NOT offered for non-pair', () => {

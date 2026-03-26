@@ -20,7 +20,7 @@ describe('DEFAULT_RULES', () => {
     expect(DEFAULT_RULES.allow_resplit_aces).toBe(false);
     expect(DEFAULT_RULES.allow_hit_split_aces).toBe(false);
     expect(DEFAULT_RULES.double_down_on).toBe('any_two_cards');
-    expect(DEFAULT_RULES.split_requires_identical_rank).toBe(false);
+    expect(DEFAULT_RULES.split_requires_identical_rank).toBe(true);
     expect(DEFAULT_RULES.penetration).toBe(0.75);
   });
 });

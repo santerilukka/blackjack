@@ -26,12 +26,12 @@ router.post('/login', (req, res) => {
   // Clear any stale game session so the user starts fresh
   delete req.session.gameSessionId;
 
-  res.json({ username: user.username, balance: user.balance });
+  res.json({ username: user.username, balance: user.balance, coins: user.coins, activeFelt: user.activeFelt });
 });
 
 /**
  * GET /api/me — Return the currently logged-in user.
- * Response (200): { username, balance }
+ * Response (200): { username, balance, coins, activeFelt }
  * Response (401): { error }
  */
 router.get('/me', (req, res) => {
@@ -45,7 +45,7 @@ router.get('/me', (req, res) => {
     return res.status(401).json({ error: 'Not logged in' });
   }
 
-  res.json({ username: user.username, balance: user.balance });
+  res.json({ username: user.username, balance: user.balance, coins: user.coins, activeFelt: user.activeFelt });
 });
 
 /**

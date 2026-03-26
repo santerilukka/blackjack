@@ -4,6 +4,7 @@ import session from 'express-session';
 import { authRoutes } from './routes/auth.js';
 import { sessionRoutes } from './routes/session.js';
 import { gameRoutes } from './routes/game.js';
+import { shopRoutes } from './routes/shop.js';
 import { authGuard } from './middleware/authGuard.js';
 
 const app = express();
@@ -29,5 +30,6 @@ app.get('/api/health', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api', authGuard, sessionRoutes);
 app.use('/api', authGuard, gameRoutes);
+app.use('/api/shop', authGuard, shopRoutes);
 
 export { app };
