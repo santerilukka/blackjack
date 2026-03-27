@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Application } from 'pixi.js';
+import { BG_DARK } from '../theme/colors.js';
 
 /**
  * Bridge hook that manages a PixiJS Application lifecycle.
@@ -8,7 +9,7 @@ import { Application } from 'pixi.js';
  * @param {{ width?: number, height?: number, background?: string }} options
  * @returns {{ canvasRef: React.RefObject, app: Application | null, ready: boolean }}
  */
-export function usePixiApp({ width = 800, height = 500, background = '#0a1f11' } = {}) {
+export function usePixiApp({ width = 800, height = 500, background = BG_DARK } = {}) {
   const canvasRef = useRef(null);
   const appRef = useRef(null);
   const [ready, setReady] = useState(false);

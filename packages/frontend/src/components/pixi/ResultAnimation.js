@@ -203,32 +203,40 @@ async function flyChipsFromDealer(container, app, winAmount) {
 }
 
 /**
+ * Staggered tween of chip wrappers with rotation jitter.
+ * Shared by sweep-to-dealer, collect-to-player, and surrender animations.
+ * @param {Container[]} wrappers
+ * @param {(wrapper: Container) => object} targetFn - produces tween target per wrapper
+ * @param {import('pixi.js').Application} app
+ * @param {{ staggerMs?: number, duration?: number }} [options]
+ */
+function staggeredChipTween(wrappers, targetFn, app, { staggerMs = 60, duration = 800 } = {}) {
+  return Promise.all(wrappers.map((wrapper, i) =>
+    new Promise((resolve) => {
+      setTimeout(() => {
+        tween(wrapper, targetFn(wrapper), duration, app, { easing: easeOutQuad }).then(resolve);
+      }, i * staggerMs);
+    })
+  ));
+}
+
+/** Hide the bet label before chip animation. */
+function hideBetLabel(betSpot) {
+  if (betSpot._totalLabel) betSpot._totalLabel.alpha = 0;
+  if (betSpot._totalBg) betSpot._totalBg.alpha = 0;
+}
+
+/**
  * Sweep all bet chips upward toward the dealer and fade out, with rotation.
  */
 async function sweepChipsToDealer(betSpot, app) {
   const wrappers = betSpot._chipWrappers;
-  if (!wrappers || wrappers.length === 0) {
-    betSpot.clear();
-    return;
-  }
+  if (!wrappers || wrappers.length === 0) { betSpot.clear(); return; }
 
-  // Hide the total label immediately
-  if (betSpot._totalLabel) betSpot._totalLabel.alpha = 0;
-  if (betSpot._totalBg) betSpot._totalBg.alpha = 0;
-
-  const promises = wrappers.map((wrapper, i) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        tween(wrapper, {
-          y: wrapper.y - 400,
-          alpha: 0,
-          rotation: wrapper.rotation + (Math.random() - 0.5) * 2,
-        }, 800, app, { easing: easeOutQuad }).then(resolve);
-      }, i * 60);
-    });
-  });
-
-  await Promise.all(promises);
+  hideBetLabel(betSpot);
+  await staggeredChipTween(wrappers, (w) => ({
+    y: w.y - 400, alpha: 0, rotation: w.rotation + (Math.random() - 0.5) * 2,
+  }), app);
   betSpot.clear();
 }
 
@@ -237,28 +245,12 @@ async function sweepChipsToDealer(betSpot, app) {
  */
 async function collectBetChipsToPlayer(betSpot, app) {
   const wrappers = betSpot._chipWrappers;
-  if (!wrappers || wrappers.length === 0) {
-    betSpot.clear();
-    return;
-  }
+  if (!wrappers || wrappers.length === 0) { betSpot.clear(); return; }
 
-  // Hide the total label immediately
-  if (betSpot._totalLabel) betSpot._totalLabel.alpha = 0;
-  if (betSpot._totalBg) betSpot._totalBg.alpha = 0;
-
-  const promises = wrappers.map((wrapper, i) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        tween(wrapper, {
-          y: wrapper.y + (PLAYER_COLLECT_Y - betSpot.container.y),
-          alpha: 0,
-          rotation: wrapper.rotation + (Math.random() - 0.5) * 2,
-        }, 800, app, { easing: easeOutQuad }).then(resolve);
-      }, i * 60);
-    });
-  });
-
-  await Promise.all(promises);
+  hideBetLabel(betSpot);
+  await staggeredChipTween(wrappers, (w) => ({
+    y: w.y + (PLAYER_COLLECT_Y - betSpot.container.y), alpha: 0, rotation: w.rotation + (Math.random() - 0.5) * 2,
+  }), app);
   betSpot.clear();
 }
 
@@ -267,46 +259,19 @@ async function collectBetChipsToPlayer(betSpot, app) {
  */
 async function surrenderChipSplit(betSpot, app) {
   const wrappers = betSpot._chipWrappers;
-  if (!wrappers || wrappers.length === 0) {
-    betSpot.clear();
-    return;
-  }
+  if (!wrappers || wrappers.length === 0) { betSpot.clear(); return; }
 
-  // Hide the total label immediately
-  if (betSpot._totalLabel) betSpot._totalLabel.alpha = 0;
-  if (betSpot._totalBg) betSpot._totalBg.alpha = 0;
-
+  hideBetLabel(betSpot);
   const half = Math.ceil(wrappers.length / 2);
-  const sweepGroup = wrappers.slice(0, half);
-  const keepGroup = wrappers.slice(half);
 
-  // Sweep top half to dealer with rotation
-  const sweepPromises = sweepGroup.map((wrapper, i) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        tween(wrapper, {
-          y: wrapper.y - 400,
-          alpha: 0,
-          rotation: wrapper.rotation + (Math.random() - 0.5) * 2,
-        }, 800, app, { easing: easeOutQuad }).then(resolve);
-      }, i * 60);
-    });
-  });
-
-  // Slide kept half down to player area and fade out
-  const collectPromises = keepGroup.map((wrapper, i) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        tween(wrapper, {
-          y: wrapper.y + (PLAYER_COLLECT_Y - betSpot.container.y),
-          alpha: 0,
-          rotation: wrapper.rotation + (Math.random() - 0.5) * 2,
-        }, 800, app, { easing: easeOutQuad }).then(resolve);
-      }, i * 60);
-    });
-  });
-
-  await Promise.all([...sweepPromises, ...collectPromises]);
+  await Promise.all([
+    staggeredChipTween(wrappers.slice(0, half), (w) => ({
+      y: w.y - 400, alpha: 0, rotation: w.rotation + (Math.random() - 0.5) * 2,
+    }), app),
+    staggeredChipTween(wrappers.slice(half), (w) => ({
+      y: w.y + (PLAYER_COLLECT_Y - betSpot.container.y), alpha: 0, rotation: w.rotation + (Math.random() - 0.5) * 2,
+    }), app),
+  ]);
   betSpot.clear();
 }
 

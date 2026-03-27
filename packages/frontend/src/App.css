@@ -1,6 +1,6 @@
 .app {
   min-height: 100vh;
-  background: #0a1f11;
+  background: var(--color-bg);
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -213,6 +213,11 @@
   background: rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
   z-index: 50;
+}
+
+.phase-inactive {
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .action-bar {

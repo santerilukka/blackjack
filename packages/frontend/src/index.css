@@ -1,3 +1,9 @@
+:root {
+  --color-bg: #0a1f11;
+  --color-gold: #ffd700;
+  --color-bust-red: #ff4444;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -6,5 +12,5 @@
 
 body {
   margin: 0;
-  background: #0a1f11;
+  background: var(--color-bg);
 }

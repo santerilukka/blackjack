@@ -61,27 +61,10 @@ export function executeSplit(state, deck, rules) {
   hand2.blackjack = false;
 
   const hands = [hand1, hand2];
+  const updatedState = { ...state, balance, currentBet: bet * 2 };
 
-  const availableActions = actionsForSplitHand({
-    hand: hand1,
-    balance,
-    hands,
-    isFirstAction: true,
-    rules,
-  });
-
-  return {
-    state: buildSplitTurnState(state, {
-      hands,
-      activeHandIndex: 0,
-      balance,
-      currentBet: bet * 2,
-      message: `Split! Playing hand 1 of ${hands.length}.`,
-      shoeSize: currentDeck.size,
-      availableActions,
-    }),
-    deck: currentDeck,
-  };
+  return continueSplitTurn(updatedState, hands, 0, currentDeck, rules, true,
+    `Split! Playing hand 1 of ${hands.length}.`);
 }
 
 /**
@@ -122,26 +105,8 @@ function splitHit(state, hands, idx, deck, rules) {
     return advanceSplitHand(state, hands, idx, newDeck, rules);
   }
 
-  const availableActions = actionsForSplitHand({
-    hand,
-    balance: state.balance,
-    hands,
-    isFirstAction: false,
-    rules,
-  });
-
-  return {
-    state: buildSplitTurnState(state, {
-      hands,
-      activeHandIndex: idx,
-      balance: state.balance,
-      currentBet: state.currentBet,
-      message: `Hand ${idx + 1}: ${hand.total}. Hit or stand?`,
-      shoeSize: newDeck.size,
-      availableActions,
-    }),
-    deck: newDeck,
-  };
+  return continueSplitTurn(state, hands, idx, newDeck, rules, false,
+    `Hand ${idx + 1}: ${hand.total}. Hit or stand?`);
 }
 
 function splitStand(state, hands, idx, deck, rules) {
@@ -186,6 +151,8 @@ function splitResplit(state, hands, idx, deck, rules) {
 
   hands.splice(idx, 1, newHand1, newHand2);
 
+  const updatedState = { ...state, balance, currentBet: state.currentBet + bet };
+
   // For split aces (no hit), auto-settle
   if ((isAces || hand.fromSplitAces) && !rules.allow_hit_split_aces) {
     newHand1.settled = true;
@@ -193,57 +160,21 @@ function splitResplit(state, hands, idx, deck, rules) {
 
     const allSettled = hands.every(h => h.settled);
     if (allSettled) {
-      return finishSplitRound(state, hands, currentDeck, balance, rules);
+      return finishSplitRound(updatedState, hands, currentDeck, balance, rules);
     }
 
     const nextIdx = hands.findIndex((h, i) => !h.settled);
-    const nextHand = hands[nextIdx];
-    const availableActions = actionsForSplitHand({
-      hand: nextHand,
-      balance,
-      hands,
-      isFirstAction: true,
-      rules,
-    });
-
-    return {
-      state: buildSplitTurnState(state, {
-        hands,
-        activeHandIndex: nextIdx,
-        balance,
-        currentBet: state.currentBet + bet,
-        message: `Split again! Playing hand ${nextIdx + 1} of ${hands.length}.`,
-        shoeSize: currentDeck.size,
-        availableActions,
-      }),
-      deck: currentDeck,
-    };
+    return continueSplitTurn(updatedState, hands, nextIdx, currentDeck, rules, true,
+      `Split again! Playing hand ${nextIdx + 1} of ${hands.length}.`);
   }
 
-  const availableActions = actionsForSplitHand({
-    hand: newHand1,
-    balance,
-    hands,
-    isFirstAction: true,
-    rules,
-  });
-
-  return {
-    state: buildSplitTurnState(state, {
-      hands,
-      activeHandIndex: idx,
-      balance,
-      currentBet: state.currentBet + bet,
-      message: `Split again! Playing hand ${idx + 1} of ${hands.length}.`,
-      shoeSize: currentDeck.size,
-      availableActions,
-    }),
-    deck: currentDeck,
-  };
+  return continueSplitTurn(updatedState, hands, idx, currentDeck, rules, true,
+    `Split again! Playing hand ${idx + 1} of ${hands.length}.`);
 }
 
 /**
  * After a split hand is settled, advance to the next hand or finish the round.
+ * Shared by splitHit, splitStand, splitDouble, and splitResplit.
  */
 function advanceSplitHand(state, hands, currentIdx, deck, rules) {
   const nextIdx = hands.findIndex((h, i) => i > currentIdx && !h.settled);
@@ -252,22 +183,30 @@ function advanceSplitHand(state, hands, currentIdx, deck, rules) {
     return finishSplitRound(state, hands, deck, state.balance, rules);
   }
 
-  const nextHand = hands[nextIdx];
+  return continueSplitTurn(state, hands, nextIdx, deck, rules, true,
+    `Playing hand ${nextIdx + 1} of ${hands.length}.`);
+}
+
+/**
+ * Build a split-turn state for the given hand index.
+ * Centralises the repeated pattern of computing available actions and building state.
+ */
+function continueSplitTurn(state, hands, idx, deck, rules, isFirstAction, message) {
   const availableActions = actionsForSplitHand({
-    hand: nextHand,
+    hand: hands[idx],
     balance: state.balance,
     hands,
-    isFirstAction: true,
+    isFirstAction,
     rules,
   });
 
   return {
     state: buildSplitTurnState(state, {
       hands,
-      activeHandIndex: nextIdx,
+      activeHandIndex: idx,
       balance: state.balance,
       currentBet: state.currentBet,
-      message: `Playing hand ${nextIdx + 1} of ${hands.length}.`,
+      message,
       shoeSize: deck.size,
       availableActions,
     }),

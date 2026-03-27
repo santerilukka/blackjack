@@ -173,8 +173,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
       <div className="game-bottom-bar">
         <div
-          className="bet-panel-wrapper"
-          style={{ opacity: isBetting ? 1 : 0.3, pointerEvents: isBetting ? 'auto' : 'none' }}
+          className={`bet-panel-wrapper${isBetting ? '' : ' phase-inactive'}`}
         >
           <BetPanel
             balance={balance}
@@ -188,8 +187,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
         </div>
 
         <div
-          className="action-bar-wrapper"
-          style={{ opacity: isPlayerTurn ? 1 : 0.3, pointerEvents: isPlayerTurn ? 'auto' : 'none' }}
+          className={`action-bar-wrapper${isPlayerTurn ? '' : ' phase-inactive'}`}
         >
           <ActionBar
             onHit={hit}
@@ -204,8 +202,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
         <div className="bottom-row">
           <div
-            className="insurance-wrapper"
-            style={{ opacity: isInsurance ? 1 : 0.3, pointerEvents: isInsurance ? 'auto' : 'none' }}
+            className={`insurance-wrapper${isInsurance ? '' : ' phase-inactive'}`}
           >
             <div className="insurance-panel">
               <button className="insurance-btn-yes" onClick={() => insurance(true)} disabled={loading || animating || !isInsurance}>
@@ -218,8 +215,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
           </div>
 
           <div
-            className="new-round-wrapper"
-            style={{ opacity: isResolved ? 1 : 0.3, pointerEvents: isResolved ? 'auto' : 'none' }}
+            className={`new-round-wrapper${isResolved ? '' : ' phase-inactive'}`}
           >
             <button className="new-round-btn" onClick={handleNewRound} disabled={loading || animating || !isResolved}>
               New Round <kbd>N</kbd>

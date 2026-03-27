@@ -5,11 +5,15 @@ import { updateBalance, addCoins } from '../models/userManager.js';
 import { PHASES, ACTIONS, OUTCOMES, COIN_RATE, BLACKJACK_COIN_BONUS } from '@blackjack/shared';
 import { placeBet, resolveInsurance, startNewRound } from '../engine/round.js';
 import { executeAction } from '../engine/actions.js';
+import { assertValidGameState } from '../engine/stateValidator.js';
 
 /**
  * Persist updated game state (and deck) and sync balance to user store.
  */
 function commitState(req, gameSessionId, newState, newDeck) {
+  if (process.env.NODE_ENV !== 'production') {
+    assertValidGameState(newState);
+  }
   updateSession(gameSessionId, newState, newDeck);
   const username = req.session?.username;
   if (username) {
@@ -29,19 +33,6 @@ function requirePhase(phase, message) {
       return res.status(400).json({ error: message });
     }
     next();
-  };
-}
-
-/**
- * Wrap a game route handler that returns { state, deck }.
- * Automatically commits state + deck and sends the JSON response.
- * @param {(req: import('express').Request) => { state: object, deck: object }} handler
- */
-function gameRoute(handler) {
-  return (req, res) => {
-    const { state: newState, deck } = handler(req);
-    commitState(req, req.gameSessionId, newState, deck);
-    res.json(newState);
   };
 }
 
