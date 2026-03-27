@@ -2,12 +2,13 @@ import { SHORTCUTS, MAX_BET } from '@blackjack/shared';
 import { CHIP_VALUES } from '../../hooks/keyboardHandler.js';
 import { chipFlatPath } from '../../utils/chipConfig.js';
 
-export default function BetPanel({ balance, betAmount, onAddChip, onDeal, onClearBet, disabled }) {
+export default function BetPanel({ balance, displayBalance, betAmount, onAddChip, onDeal, onClearBet, disabled }) {
+  const shownBalance = displayBalance ?? balance;
   return (
     <div className="bet-panel">
       <div className="balance-display">
         <span className="balance-label">Balance</span>
-        <span className="balance-amount">${balance}</span>
+        <span className="balance-amount">${shownBalance}</span>
       </div>
       <div className="chips">
         {CHIP_VALUES.map((value, index) => {

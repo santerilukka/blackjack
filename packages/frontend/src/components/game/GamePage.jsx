@@ -131,6 +131,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
   const { phase, balance } = gameState;
   const isBetting = phase === PHASES.BETTING;
+  const displayedBalance = isBetting ? balance - betAmount : balance;
   const isPlayerTurn = phase === PHASES.PLAYER_TURN;
   const isInsurance = phase === PHASES.INSURANCE;
   const isResolved = phase === PHASES.RESOLVED;
@@ -177,6 +178,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
         >
           <BetPanel
             balance={balance}
+            displayBalance={displayedBalance}
             betAmount={betAmount}
             onAddChip={addChip}
             onDeal={doDeal}
