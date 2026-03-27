@@ -44,6 +44,16 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
   }, []);
   const handleAnimatingChange = useCallback((busy) => setAnimating(busy), []);
 
+  // Sync CSS --color-bg with the active felt's background color
+  useEffect(() => {
+    const item = SHOP_ITEMS[activeFelt];
+    const bg = item?.colors?.bg ?? '#0a1f11';
+    document.documentElement.style.setProperty('--color-bg', bg);
+    return () => {
+      document.documentElement.style.setProperty('--color-bg', '#0a1f11');
+    };
+  }, [activeFelt]);
+
   const addChip = useCallback((chipValue) => {
     const cap = Math.min(gameState?.balance ?? Infinity, MAX_BET);
     const currentTotal = chipHistoryRef.current.reduce((s, v) => s + v, 0);
