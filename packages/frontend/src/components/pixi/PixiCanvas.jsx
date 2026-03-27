@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { PHASES, SHOP_ITEMS } from '@blackjack/shared';
+import { PHASES, OUTCOMES, SHOP_ITEMS } from '@blackjack/shared';
 import { usePixiApp } from '../../hooks/usePixiApp.js';
 import { TableScene } from './TableScene.js';
 
 const CANVAS_WIDTH = 1600;
 const CANVAS_HEIGHT = 900;
+
+/** Map outcome to overlay display text. Returns null for outcomes with no text overlay. */
+function overlayText(outcome) {
+  switch (outcome) {
+    case OUTCOMES.WIN: return 'WIN';
+    case OUTCOMES.BLACKJACK: return 'BLACKJACK!';
+    case OUTCOMES.PUSH: return 'PUSH';
+    case OUTCOMES.SURRENDER: return 'SURRENDER';
+    default: return null;
+  }
+}
 
 /**
  * React wrapper that hosts the PixiJS canvas.
@@ -22,6 +33,7 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
   const parentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [sceneReady, setSceneReady] = useState(false);
+  const [resultOverlay, setResultOverlay] = useState(null);
   const onAnimatingChangeRef = useRef(onAnimatingChange);
   const shuffleAnimatedRef = useRef(false);
 
@@ -60,6 +72,7 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
     scene.animationQueue.onBusyChange = (busy) => {
       onAnimatingChangeRef.current?.(busy);
     };
+    scene.onResultOverlay = (overlay) => setResultOverlay(overlay);
     sceneRef.current = scene;
     setSceneReady(true);
 
@@ -104,6 +117,19 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
     sceneRef.current.update(gameState);
   }, [gameState, sceneReady]);
 
+  const text = resultOverlay?.show ? overlayText(resultOverlay.outcome) : null;
+  const isWinOutcome = resultOverlay?.outcome === OUTCOMES.WIN || resultOverlay?.outcome === OUTCOMES.BLACKJACK;
+  const netProfit = (resultOverlay?.payout != null && resultOverlay?.totalBet)
+    ? resultOverlay.payout - resultOverlay.totalBet
+    : 0;
+  const showTotalWon = text && isWinOutcome && netProfit > 0;
+  let wonTier = 'small';
+  if (showTotalWon && resultOverlay.totalBet > 0) {
+    const multiplier = resultOverlay.payout / resultOverlay.totalBet;
+    if (multiplier >= 5) wonTier = 'large';
+    else if (multiplier >= 2) wonTier = 'medium';
+  }
+
   return (
     <div ref={parentRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div
@@ -119,7 +145,21 @@ const PixiCanvas = forwardRef(function PixiCanvas({ gameState, npcCount = 0, onA
           borderRadius: 12,
           overflow: 'hidden',
         }}
-      />
+      >
+        {text && (
+          <div
+            key={resultOverlay.outcome}
+            className={`result-overlay result-overlay--${resultOverlay.outcome}`}
+          >
+            <div>{text}</div>
+            {showTotalWon && (
+              <div className={`result-overlay__total result-overlay__total--${wonTier}`}>
+                +${netProfit}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 });

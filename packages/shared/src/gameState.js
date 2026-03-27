@@ -47,6 +47,8 @@ import { PHASES, DEFAULT_BALANCE, NUM_DECKS } from './constants.js';
  * @property {Hand} playerHand
  * @property {DealerHand} dealerHand
  * @property {string|null} outcome
+ * @property {number|null} payout - total return from the round (null until resolved)
+ * @property {Array<{outcome: string, payout: number, bet: number}>|null} handResults - per-hand results for split rounds
  * @property {number|null} insuranceBet
  * @property {SplitHand[]|null} playerHands - populated during split play
  * @property {number} activeHandIndex - index of hand being played during split
@@ -69,6 +71,8 @@ export function createDefaultGameState(sessionId) {
     playerHand: { cards: [], total: 0, soft: false, busted: false, blackjack: false },
     dealerHand: { cards: [], total: 0, soft: false, busted: false, blackjack: false, hiddenCard: null },
     outcome: null,
+    payout: null,
+    handResults: null,
     insuranceBet: null,
     playerHands: null,
     activeHandIndex: 0,

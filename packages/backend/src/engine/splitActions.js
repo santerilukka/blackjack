@@ -294,13 +294,22 @@ function finishSplitRound(state, hands, deck, balance, rules) {
   else if (outcomes.every(o => o === 'push')) overallOutcome = 'push';
   else overallOutcome = 'win';
 
+  const handResults = results.map((r, i) => ({
+    outcome: r.outcome,
+    payout: r.payout,
+    bet: hands[i].bet,
+  }));
+  const totalBet = hands.reduce((sum, h) => sum + h.bet, 0);
+
   return {
     state: buildSplitResolvedState(state, {
       hands,
       dealerHand,
       balance: balance + totalPayout,
-      currentBet: hands.reduce((sum, h) => sum + h.bet, 0),
+      currentBet: totalBet,
       outcome: overallOutcome,
+      payout: totalPayout,
+      handResults,
       message: overallMessage,
       shoeSize: newDeck.size,
     }),

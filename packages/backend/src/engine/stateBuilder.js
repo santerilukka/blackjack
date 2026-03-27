@@ -27,7 +27,7 @@ export function revealDealerCards(dealerHand) {
  * @param {number} params.shoeSize
  * @returns {import('@blackjack/shared').GameState}
  */
-export function buildResolvedState(state, { playerHand, dealerCards, balance, currentBet, outcome, message, shoeSize }) {
+export function buildResolvedState(state, { playerHand, dealerCards, balance, currentBet, outcome, payout, message, shoeSize }) {
   return {
     ...state,
     phase: PHASES.RESOLVED,
@@ -36,6 +36,8 @@ export function buildResolvedState(state, { playerHand, dealerCards, balance, cu
     balance,
     currentBet: currentBet ?? state.currentBet,
     outcome,
+    payout: payout ?? null,
+    handResults: null,
     message,
     shoeSize,
     availableActions: [],
@@ -150,7 +152,7 @@ export function buildSplitTurnState(state, { hands, activeHandIndex, balance, cu
  * @param {number} params.shoeSize
  * @returns {import('@blackjack/shared').GameState}
  */
-export function buildSplitResolvedState(state, { hands, dealerHand, balance, currentBet, outcome, message, shoeSize }) {
+export function buildSplitResolvedState(state, { hands, dealerHand, balance, currentBet, outcome, payout, handResults, message, shoeSize }) {
   return {
     ...state,
     phase: PHASES.RESOLVED,
@@ -161,6 +163,8 @@ export function buildSplitResolvedState(state, { hands, dealerHand, balance, cur
     balance,
     currentBet,
     outcome,
+    payout: payout ?? null,
+    handResults: handResults ?? null,
     message,
     shoeSize,
     availableActions: [],

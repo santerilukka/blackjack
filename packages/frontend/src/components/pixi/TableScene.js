@@ -9,6 +9,8 @@ import { executeCommands } from './commandExecutor.js';
 import { tween, easeOutCubic, easeOutQuad } from './tween.js';
 import { SeatMarker, computeSeatPositions } from './SeatMarker.js';
 import { playShuffleAnimation } from './ShuffleAnimation.js';
+import { playResultAnimation } from './ResultAnimation.js';
+import { PHASES, OUTCOMES } from '@blackjack/shared';
 
 const CARD_HEIGHT = 140;
 const CARD_OVERLAP = 44;
@@ -130,6 +132,11 @@ export class TableScene {
     this.root.addChild(this.betSpot.container);
 
     this._currentMessage = '';
+
+    // Result animation state
+    this._resultAnimPlayed = false;
+    /** @type {((overlay: { outcome: string|null, show: boolean }) => void)|null} */
+    this.onResultOverlay = null;
 
     // Split hand state
     this._splitContainers = []; // Array of { cards: Container, badge: Container, indicator: Graphics }
@@ -772,6 +779,29 @@ export class TableScene {
       const { dealerCmd, playerCmd, playerHandCmds, isSplit, activeHandIndex, handCount, showDealerHidden, newRenderedState } = diff;
       await executeCommands({ dealerCmd, playerCmd, playerHandCmds, isSplit, activeHandIndex, handCount, showDealerHidden, gameState }, renderer);
       this._renderedState = newRenderedState;
+
+      // Trigger result animation on RESOLVED transition
+      if (gameState.phase === PHASES.RESOLVED && gameState.outcome && !this._resultAnimPlayed) {
+        this._resultAnimPlayed = true;
+        this.onResultOverlay?.({
+          outcome: gameState.outcome,
+          show: true,
+          payout: gameState.payout,
+          totalBet: gameState.currentBet,
+        });
+        await playResultAnimation({
+          app: this.app,
+          root: this.root,
+          outcome: gameState.outcome,
+          betSpot: this.betSpot,
+          splitContainers: this._splitContainers,
+          isSplit: this._isSplit,
+          handResults: gameState.handResults,
+          payout: gameState.payout,
+          totalBet: gameState.currentBet,
+        });
+        this.onResultOverlay?.({ outcome: null, show: false });
+      }
     });
   }
 
@@ -812,6 +842,7 @@ export class TableScene {
     this._updateBadge(this.playerTotal);
 
     this._currentMessage = '';
+    this._resultAnimPlayed = false;
 
     if (shoeSize != null) {
       this._updateStacksInternal(shoeSize, 0);

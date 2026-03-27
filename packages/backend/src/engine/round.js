@@ -83,7 +83,7 @@ export function placeBet(state, deck, amount, rules = DEFAULT_RULES) {
         state: buildResolvedState(state, {
           playerHand, dealerCards: allDealerCards,
           balance: balance + payout, currentBet: amount,
-          outcome, message, shoeSize: currentDeck.size,
+          outcome, payout, message, shoeSize: currentDeck.size,
         }),
         deck: currentDeck,
       };
@@ -147,6 +147,7 @@ export function resolveInsurance(state, deck, accept, rules = DEFAULT_RULES) {
           balance: balance + state.currentBet + insurancePayout,
           currentBet: state.currentBet,
           outcome: 'push',
+          payout: state.currentBet,
           message: accept
             ? 'Both have blackjack. Push. Insurance pays 2:1!'
             : 'Both have blackjack. Push.',
@@ -163,6 +164,7 @@ export function resolveInsurance(state, deck, accept, rules = DEFAULT_RULES) {
         balance: balance + insurancePayout,
         currentBet: state.currentBet,
         outcome: 'lose',
+        payout: 0,
         message: accept
           ? 'Dealer has blackjack. You lose, but insurance pays 2:1.'
           : 'Dealer has blackjack. You lose.',
@@ -182,6 +184,7 @@ export function resolveInsurance(state, deck, accept, rules = DEFAULT_RULES) {
         balance: balance + payout,
         currentBet: state.currentBet,
         outcome,
+        payout,
         message: accept ? message + ' Insurance lost.' : message,
         shoeSize: deck.size,
       }),

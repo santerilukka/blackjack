@@ -843,3 +843,103 @@ button kbd, .play-btn kbd {
     display: none;
   }
 }
+
+/* ── Result overlay (win/loss/push/blackjack/surrender) ── */
+
+.result-overlay {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: bold;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: resultTextIn 0.3s ease-out forwards;
+}
+
+.result-overlay--win {
+  font-size: 52px;
+  color: #ffffff;
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.5),
+    0 0 40px rgba(255, 255, 255, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.result-overlay--blackjack {
+  font-size: 80px;
+  color: #ffd700;
+  text-shadow:
+    0 0 30px rgba(255, 215, 0, 0.8),
+    0 0 60px rgba(255, 215, 0, 0.4),
+    0 0 80px rgba(255, 215, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.result-overlay--push {
+  font-size: 60px;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.result-overlay--surrender {
+  font-size: 52px;
+  color: rgba(180, 180, 180, 0.7);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.result-overlay__total {
+  color: #ffffff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-top: 8px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  animation: totalWonIn 0.3s ease-out forwards;
+  animation-delay: 0.15s;
+  opacity: 0;
+}
+
+.result-overlay__total--small {
+  font-size: 28px;
+}
+
+.result-overlay__total--medium {
+  font-size: 36px;
+}
+
+.result-overlay__total--large {
+  font-size: 48px;
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes totalWonIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes resultTextIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
