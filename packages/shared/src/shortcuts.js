@@ -16,6 +16,7 @@ export const SHORTCUTS = {
   CLOSE_MENU: { key: 'escape', label: 'Esc', description: 'Close menu' },
   SHOP:       { key: 'b', label: 'B', description: 'Toggle shop' },
   LOGOUT:     { key: 'l', label: 'L', description: 'Log out (in menu)' },
+  MUTE:       { key: '0', label: '0', description: 'Toggle mute' },
 };
 
 /** Chip placement uses number keys 1-5 */

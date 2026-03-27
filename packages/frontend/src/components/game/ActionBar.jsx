@@ -1,4 +1,5 @@
 import { ACTIONS, SHORTCUTS } from '@blackjack/shared';
+import { play } from '../../audio/SoundManager.js';
 
 export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrender, disabled, availableActions = [] }) {
   const canDouble = availableActions.includes(ACTIONS.DOUBLE);
@@ -9,7 +10,7 @@ export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrend
     <div className="action-bar">
       <button
         className="surrender-btn"
-        onClick={onSurrender}
+        onClick={() => { play('uiClick'); onSurrender(); }}
         disabled={disabled || !canSurrender}
         style={{ opacity: (disabled || !canSurrender) ? 0.4 : 1 }}
       >
@@ -17,7 +18,7 @@ export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrend
       </button>
       <button
         className="split-btn"
-        onClick={onSplit}
+        onClick={() => { play('uiClick'); onSplit(); }}
         disabled={disabled || !canSplit}
         style={{ opacity: (disabled || !canSplit) ? 0.4 : 1 }}
       >
@@ -25,14 +26,14 @@ export default function ActionBar({ onHit, onStand, onDouble, onSplit, onSurrend
       </button>
       <button
         className="double-btn"
-        onClick={onDouble}
+        onClick={() => { play('uiClick'); onDouble(); }}
         disabled={disabled || !canDouble}
         style={{ opacity: (disabled || !canDouble) ? 0.4 : 1 }}
       >
         Double <kbd>{SHORTCUTS.DOUBLE.label}</kbd>
       </button>
-      <button className="stand-btn" onClick={onStand} disabled={disabled}>Stand <kbd>{SHORTCUTS.STAND.label}</kbd></button>
-      <button className="hit-btn" onClick={onHit} disabled={disabled}>Hit <kbd>{SHORTCUTS.HIT.label}</kbd></button>
+      <button className="stand-btn" onClick={() => { play('uiClick'); onStand(); }} disabled={disabled}>Stand <kbd>{SHORTCUTS.STAND.label}</kbd></button>
+      <button className="hit-btn" onClick={() => { play('uiClick'); onHit(); }} disabled={disabled}>Hit <kbd>{SHORTCUTS.HIT.label}</kbd></button>
     </div>
   );
 }

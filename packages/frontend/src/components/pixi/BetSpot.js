@@ -1,6 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import { createTopChipSprite, decomposeIntoChips } from './ChipSprite.js';
 import { easeOutQuad, easeOutBounce } from './tween.js';
+import { play } from '../../audio/SoundManager.js';
 
 const BET_CIRCLE_RADIUS = 45;
 const CHIP_SIZE = 70;
@@ -37,6 +38,7 @@ export class BetSpot {
    * @returns {Promise<void>}
    */
   async addChip(denomination, app) {
+    play('chipLay');
     // If this is the first chip, remove the empty placeholder
     if (this._chips.length === 0) {
       this.container.removeChildren();

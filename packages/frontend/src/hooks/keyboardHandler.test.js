@@ -23,8 +23,8 @@ describe('resolveKeyAction', () => {
       }
     });
 
-    it('ignores number keys outside 1-5', () => {
-      expect(resolveKeyAction('0', phase, [])).toBeNull();
+    it('ignores number keys outside 1-5 (except 0 which is mute)', () => {
+      expect(resolveKeyAction('0', phase, [])).toEqual({ type: 'toggleMute' });
       expect(resolveKeyAction('6', phase, [])).toBeNull();
       expect(resolveKeyAction('9', phase, [])).toBeNull();
     });

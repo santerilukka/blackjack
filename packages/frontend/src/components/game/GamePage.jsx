@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { PHASES, MAX_BET, SHOP_ITEMS } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
+import { play, toggleMute, preloadAll } from '../../audio/SoundManager.js';
 import BetPanel from './BetPanel.jsx';
 import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
@@ -61,6 +62,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
   useEffect(() => {
     startSession(tableId);
+    preloadAll();
   }, []);
 
   // Reset bet when returning to betting phase (new round)
@@ -118,6 +120,8 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
       if (!action) return;
       e.preventDefault();
 
+      if (action.type !== 'toggleMute') play('uiClick');
+
       switch (action.type) {
         case 'toggleMenu': toggleMenu(); break;
         case 'toggleShop': toggleShop(); break;
@@ -132,6 +136,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
         case 'insuranceYes': insurance(true); break;
         case 'insuranceNo': insurance(false); break;
         case 'newRound': handleNewRound(); break;
+        case 'toggleMute': toggleMute(); break;
       }
     }
 
@@ -152,10 +157,10 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
   return (
     <div className="game-page">
-      <button className="menu-toggle-btn" onClick={toggleMenu} aria-label="Open menu">
+      <button className="menu-toggle-btn" onClick={() => { play('uiClick'); toggleMenu(); }} aria-label="Open menu">
         Menu <kbd>M</kbd>
       </button>
-      <button className="shop-toggle-btn" onClick={toggleShop} aria-label="Open shop">
+      <button className="shop-toggle-btn" onClick={() => { play('uiClick'); toggleShop(); }} aria-label="Open shop">
         Shop <kbd>B</kbd>
       </button>
 
@@ -219,10 +224,10 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
             className={`insurance-wrapper${isInsurance ? '' : ' phase-inactive'}`}
           >
             <div className="insurance-panel">
-              <button className="insurance-btn-yes" onClick={() => insurance(true)} disabled={loading || animating || !isInsurance}>
+              <button className="insurance-btn-yes" onClick={() => { play('uiClick'); insurance(true); }} disabled={loading || animating || !isInsurance}>
                 Insurance <kbd>Y</kbd>
               </button>
-              <button className="insurance-btn-no" onClick={() => insurance(false)} disabled={loading || animating || !isInsurance}>
+              <button className="insurance-btn-no" onClick={() => { play('uiClick'); insurance(false); }} disabled={loading || animating || !isInsurance}>
                 No Insurance <kbd>N</kbd>
               </button>
             </div>
@@ -231,7 +236,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
           <div
             className={`new-round-wrapper${isResolved ? '' : ' phase-inactive'}`}
           >
-            <button className="new-round-btn" onClick={handleNewRound} disabled={loading || animating || !isResolved}>
+            <button className="new-round-btn" onClick={() => { play('uiClick'); handleNewRound(); }} disabled={loading || animating || !isResolved}>
               New Round <kbd>N</kbd>
             </button>
           </div>

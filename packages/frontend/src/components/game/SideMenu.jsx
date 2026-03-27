@@ -1,13 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from '@blackjack/shared';
 import { logout } from '../../services/api.js';
+import { getVolume, setVolume, isMuted, toggleMute } from '../../audio/SoundManager.js';
 
 export default function SideMenu({ open, onClose, balance, phase, username, onLogout, onLeaveTable }) {
   const menuRef = useRef(null);
+  const [volume, _setVolume] = useState(getVolume);
+  const [muted, _setMuted] = useState(isMuted);
 
   useEffect(() => {
     if (open && menuRef.current) {
       menuRef.current.focus();
+      // Sync state in case mute was toggled via keyboard
+      _setVolume(getVolume());
+      _setMuted(isMuted());
     }
   }, [open]);
 
@@ -44,6 +50,37 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
           {username && <p>Player: <strong>{username}</strong></p>}
           <p>Balance: <strong>${balance}</strong></p>
           <p>Phase: <strong>{phase}</strong></p>
+        </section>
+
+        <section className="side-menu-section">
+          <h3>Sound</h3>
+          <div className="sound-controls">
+            <button
+              className="mute-btn"
+              onClick={() => {
+                const newMuted = toggleMute();
+                _setMuted(newMuted);
+              }}
+            >
+              {muted ? 'Unmute' : 'Mute'} <kbd>{SHORTCUTS.MUTE.label}</kbd>
+            </button>
+            <label className="volume-label">
+              Volume
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={muted ? 0 : volume}
+                disabled={muted}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setVolume(v);
+                  _setVolume(v);
+                }}
+              />
+            </label>
+          </div>
         </section>
 
         <section className="side-menu-section">

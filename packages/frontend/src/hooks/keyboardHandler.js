@@ -23,6 +23,11 @@ export function resolveKeyAction(key, phase, availableActions) {
     return { type: 'toggleShop' };
   }
 
+  // Mute toggle — always available
+  if (key === SHORTCUTS.MUTE.key) {
+    return { type: 'toggleMute' };
+  }
+
   // Betting phase
   if (phase === PHASES.BETTING) {
     const chipIndex = parseInt(key, 10) - 1;

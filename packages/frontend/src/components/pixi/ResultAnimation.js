@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import { tween, easeOutQuad, easeOutCubic } from './tween.js';
 import { createTopChipSprite, decomposeIntoChips } from './ChipSprite.js';
 import { OUTCOMES } from '@blackjack/shared';
+import { play } from '../../audio/SoundManager.js';
 
 const DEALER_X = 800;
 const DEALER_Y = 220;
@@ -284,26 +285,33 @@ async function playHandAnimation(container, app, betSpot, handOutcome, winAmount
 
   switch (handOutcome) {
     case OUTCOMES.WIN:
+      play('winNormal');
       await wait(400);
       goldenRays(container, app, cx, cy - 80);
       await wait(400);
+      play('chipHandle');
       await flyChipsFromDealer(container, app, winAmount);
       await collectBetChipsToPlayer(betSpot, app);
       break;
     case OUTCOMES.BLACKJACK:
+      play('winBlackjack');
       await wait(400);
       confettiBurst(container, app, cx, cy - 120);
       await wait(400);
+      play('chipHandle');
       await flyChipsFromDealer(container, app, winAmount);
       await collectBetChipsToPlayer(betSpot, app);
       break;
     case OUTCOMES.LOSE:
+      play('lose');
       await wait(400);
+      play('chipStack');
       await sweepChipsToDealer(betSpot, app);
       await wait(200);
       break;
     case OUTCOMES.PUSH:
       await wait(200);
+      play('chipStack');
       await collectBetChipsToPlayer(betSpot, app);
       await wait(200);
       break;
@@ -354,25 +362,31 @@ export async function playResultAnimation({ app, root, outcome, betSpot, splitCo
 
     switch (outcome) {
       case OUTCOMES.WIN: {
+        play('winNormal');
         await wait(400);
         goldenRays(container, app, cx, cy - 80);
         await wait(400);
+        play('chipHandle');
         await flyChipsFromDealer(container, app, winAmount);
         await Promise.all(betSpots.map(bs => collectBetChipsToPlayer(bs, app)));
         break;
       }
 
       case OUTCOMES.BLACKJACK: {
+        play('winBlackjack');
         await wait(400);
         confettiBurst(container, app, cx, cy - 120);
         await wait(400);
+        play('chipHandle');
         await flyChipsFromDealer(container, app, winAmount);
         await Promise.all(betSpots.map(bs => collectBetChipsToPlayer(bs, app)));
         break;
       }
 
       case OUTCOMES.LOSE: {
+        play('lose');
         await wait(400);
+        play('chipStack');
         await Promise.all(betSpots.map(bs => sweepChipsToDealer(bs, app)));
         await wait(200);
         break;
@@ -380,6 +394,7 @@ export async function playResultAnimation({ app, root, outcome, betSpot, splitCo
 
       case OUTCOMES.PUSH: {
         await wait(200);
+        play('chipStack');
         await Promise.all(betSpots.map(bs => collectBetChipsToPlayer(bs, app)));
         await wait(200);
         break;
@@ -387,6 +402,7 @@ export async function playResultAnimation({ app, root, outcome, betSpot, splitCo
 
       case OUTCOMES.SURRENDER: {
         await wait(200);
+        play('chipCollide');
         await Promise.all(betSpots.map(bs => surrenderChipSplit(bs, app)));
         await wait(300);
         break;

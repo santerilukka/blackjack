@@ -1,6 +1,7 @@
 import { SHORTCUTS, MAX_BET } from '@blackjack/shared';
 import { CHIP_VALUES } from '../../hooks/keyboardHandler.js';
 import { chipFlatPath } from '../../utils/chipConfig.js';
+import { play } from '../../audio/SoundManager.js';
 
 export default function BetPanel({ balance, displayBalance, betAmount, onAddChip, onDeal, onClearBet, disabled }) {
   const shownBalance = displayBalance ?? balance;
@@ -33,10 +34,10 @@ export default function BetPanel({ balance, displayBalance, betAmount, onAddChip
         })}
       </div>
       <div className="bet-controls">
-        <button className="clear-btn" onClick={onClearBet} disabled={disabled || betAmount <= 0}>
+        <button className="clear-btn" onClick={() => { play('uiClick'); onClearBet(); }} disabled={disabled || betAmount <= 0}>
           Clear <kbd>C</kbd>
         </button>
-        <button className="deal-btn" onClick={onDeal} disabled={disabled || betAmount <= 0}>
+        <button className="deal-btn" onClick={() => { play('uiClick'); onDeal(); }} disabled={disabled || betAmount <= 0}>
           Deal (${betAmount}) <kbd>{SHORTCUTS.DEAL.label}</kbd>
         </button>
       </div>

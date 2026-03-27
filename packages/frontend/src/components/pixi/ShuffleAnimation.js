@@ -1,6 +1,7 @@
 import { Container } from 'pixi.js';
 import { createCardSprite } from './CardSprite.js';
 import { tween, easeOutCubic, easeOutQuad, easeInOutQuad, easeOutBounce } from './tween.js';
+import { play } from '../../audio/SoundManager.js';
 
 /** Shoe and discard positions (must match TableScene LAYOUT) */
 const SHOE = { x: 1460, y: 100 };
@@ -196,6 +197,7 @@ export async function playShuffleAnimation({ app, root, showCollect = false }) {
   try {
     // Phase A: Collect from discard (mid-game reshuffle only)
     if (showCollect) {
+      play('cardFan');
       await phaseCollect(container, app);
     }
 
@@ -205,13 +207,17 @@ export async function playShuffleAnimation({ app, root, showCollect = false }) {
     stackCards.forEach(c => container.addChild(c));
 
     // Phase B: Gather into neat stack
+    play('cardShuffle');
     await phaseGather(stackCards, app);
 
     // Phase C: Riffle x2
+    play('cardFan');
     await phaseRiffle(stackCards, app);
+    play('cardFan');
     await phaseRiffle(stackCards, app);
 
     // Phase D: Cut
+    play('cardPlace');
     await phaseCut(stackCards, app);
 
     // Phase E: Settle + fly to shoe

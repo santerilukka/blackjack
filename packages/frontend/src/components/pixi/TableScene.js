@@ -15,6 +15,7 @@ import { LAYOUT, CARD_HEIGHT, CARD_OVERLAP } from './tableLayout.js';
 import { createTotalBadge, updateBadge } from './BadgeRenderer.js';
 import { FeltRenderer } from './FeltRenderer.js';
 import { SplitModeManager } from './SplitModeManager.js';
+import { play } from '../../audio/SoundManager.js';
 
 /**
  * TableScene manages the visual layout of the blackjack table on a PixiJS stage.
@@ -181,6 +182,7 @@ export class TableScene {
 
     const texture = await getCardTexture(card);
 
+    play('cardFlip');
     await tween(sprite, { scaleX: 0 }, 200, this.app, { easing: easeOutQuad });
     sprite.texture = texture;
     const targetScaleX = CARD_HEIGHT / texture.height;
@@ -414,6 +416,7 @@ export class TableScene {
       sprite.x = LAYOUT.shoe.x - container.x + container.pivot.x;
       sprite.y = LAYOUT.shoe.y - container.y;
 
+      play('cardDeal');
       await tween(sprite, { x: targetX, y: targetY, alpha: 1 }, 350, this.app, { easing: easeOutCubic });
       i++;
     }
@@ -432,6 +435,7 @@ export class TableScene {
       hidden.x = LAYOUT.shoe.x - container.x + container.pivot.x;
       hidden.y = LAYOUT.shoe.y - container.y;
 
+      play('cardDeal');
       await tween(hidden, { x: targetX, y: targetY, alpha: 1 }, 350, this.app, { easing: easeOutCubic });
     }
   }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SHOP_ITEMS } from '@blackjack/shared';
 import { getShop, purchaseItem, equipItem } from '../../services/api.js';
+import { play } from '../../audio/SoundManager.js';
 
 const itemList = Object.values(SHOP_ITEMS);
 
@@ -32,6 +33,7 @@ export default function ShopPanel({ open, onClose, onUpdate }) {
     setError(null);
     try {
       const result = await purchaseItem(itemId);
+      play('shopPurchase');
       setCoins(result.coins);
       setOwnedItems(result.ownedItems);
       setActiveFelt(result.activeFelt);
