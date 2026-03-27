@@ -8,9 +8,20 @@ export default function WelcomePage({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
+  const [showHint, setShowHint] = useState(false);
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (username.trim()) {
+      setShowHint(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowHint(true), 5000);
+    return () => clearTimeout(timer);
+  }, [username]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -51,6 +62,13 @@ export default function WelcomePage({ onLogin }) {
           {loading ? 'Joining...' : <>Play <kbd>Enter</kbd></>}
         </button>
         {error && <p className="login-error">{error}</p>}
+        {showHint && !username.trim() && (
+          <p className="login-hint">
+            No password needed, just pick a name to start playing.
+            Balance is saved to your name, so you can pick up where you left off.
+            This app runs locally on your machine. 
+          </p>
+        )}
       </form>
     </div>
   );

@@ -99,6 +99,22 @@
   border-radius: 4px;
 }
 
+.welcome-card .login-hint {
+  margin: 1rem 0 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  animation: hintFadeIn 0.5s ease;
+}
+
+@keyframes hintFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
   .welcome-card {
     padding: 2rem 1.5rem;
@@ -110,5 +126,9 @@
 
   .welcome-card .subtitle {
     margin-bottom: 1.5rem;
+  }
+
+  .welcome-card .login-hint {
+    font-size: 0.75rem;
   }
 }
