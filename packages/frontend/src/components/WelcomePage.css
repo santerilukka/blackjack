@@ -98,3 +98,17 @@
   background: rgba(244, 67, 54, 0.15);
   border-radius: 4px;
 }
+
+@media (max-width: 768px) {
+  .welcome-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .welcome-card h1 {
+    font-size: 1.8rem;
+  }
+
+  .welcome-card .subtitle {
+    margin-bottom: 1.5rem;
+  }
+}
