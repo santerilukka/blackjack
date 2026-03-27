@@ -30,6 +30,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
   const [activeFelt, setActiveFelt] = useState(user?.activeFelt ?? 'felt_green');
   const [betAmount, setBetAmount] = useState(0);
   const [animating, setAnimating] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
   const chipHistoryRef = useRef([]);
   const pixiRef = useRef(null);
   const toggleMenu = useCallback(() => {
@@ -69,6 +70,19 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
       chipHistoryRef.current = [];
     }
   }, [gameState?.phase]);
+
+  // Show "Shuffling..." while shuffle animation plays
+  useEffect(() => {
+    if (gameState?.reshuffled && gameState?.phase === PHASES.BETTING && gameState?.playerHand?.cards?.length === 0) {
+      setShuffling(true);
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (!animating && shuffling) {
+      setShuffling(false);
+    }
+  }, [animating]);
 
   const doDeal = useCallback(() => {
     if (gameState && betAmount > 0 && betAmount <= gameState.balance) {
@@ -163,9 +177,9 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
       {error && <div className="error">{error}</div>}
 
-      {gameState.message && (
-        <div className="game-message">{gameState.message}</div>
-      )}
+      <div className="game-message">
+        {shuffling ? 'Shuffling...' : gameState.message}
+      </div>
 
       <div className="game-canvas-area">
         <PixiCanvas ref={pixiRef} gameState={gameState} onAnimatingChange={handleAnimatingChange} activeFelt={activeFelt} />
