@@ -40,3 +40,52 @@ export const SHOP_ITEMS = {
 };
 
 export const DEFAULT_FELT = 'felt_green';
+
+/**
+ * Card back cosmetics — purchasable card back designs.
+ * `frame` matches the spritesheet frame name.
+ */
+
+/** @typedef {{ id: string, name: string, price: number, frame: string }} CardBackItem */
+
+/** @type {Record<string, CardBackItem>} */
+export const CARD_BACK_ITEMS = {
+  back_red_1: {
+    id: 'back_red_1',
+    name: 'Classic Red',
+    price: 0,
+    frame: 'back_red_1',
+  },
+  back_red_2: {
+    id: 'back_red_2',
+    name: 'Red Diamond',
+    price: 150,
+    frame: 'back_red_2',
+  },
+  back_blue_1: {
+    id: 'back_blue_1',
+    name: 'Royal Blue',
+    price: 200,
+    frame: 'back_blue_1',
+  },
+  back_blue_2: {
+    id: 'back_blue_2',
+    name: 'Blue Diamond',
+    price: 200,
+    frame: 'back_blue_2',
+  },
+  back_grey_1: {
+    id: 'back_grey_1',
+    name: 'Silver',
+    price: 250,
+    frame: 'back_grey_1',
+  },
+  back_grey_2: {
+    id: 'back_grey_2',
+    name: 'Grey Diamond',
+    price: 250,
+    frame: 'back_grey_2',
+  },
+};
+
+export const DEFAULT_CARD_BACK = 'back_red_1';

@@ -1,14 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
-import { SHOP_ITEMS } from '@blackjack/shared';
+import { SHOP_ITEMS, CARD_BACK_ITEMS } from '@blackjack/shared';
 import { getShop, purchaseItem, equipItem } from '../../services/api.js';
 import { play } from '../../audio/SoundManager.js';
 
-const itemList = Object.values(SHOP_ITEMS);
+const feltList = Object.values(SHOP_ITEMS);
+const cardBackList = Object.values(CARD_BACK_ITEMS);
+
+/**
+ * Small canvas that renders a single card-back frame from the spritesheet.
+ */
+function CardBackPreview({ frame }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.src = '/cards/cards.png';
+    img.onload = () => {
+      // Load the JSON descriptor to find the frame coordinates
+      fetch('/cards/cards.json')
+        .then((r) => r.json())
+        .then((data) => {
+          const f = data.frames[frame]?.frame;
+          if (!f) return;
+          canvas.width = f.w;
+          canvas.height = f.h;
+          ctx.clearRect(0, 0, f.w, f.h);
+          ctx.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+        });
+    };
+  }, [frame]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="shop-cardback-preview"
+      style={{ width: 40, height: 54, borderRadius: 3 }}
+    />
+  );
+}
 
 export default function ShopPanel({ open, onClose, onUpdate }) {
   const panelRef = useRef(null);
   const [ownedItems, setOwnedItems] = useState([]);
   const [activeFelt, setActiveFelt] = useState('felt_green');
+  const [activeCardBack, setActiveCardBack] = useState('back_red_1');
   const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -22,6 +61,7 @@ export default function ShopPanel({ open, onClose, onUpdate }) {
         .then((data) => {
           setOwnedItems(data.ownedItems);
           setActiveFelt(data.activeFelt);
+          setActiveCardBack(data.activeCardBack);
           setCoins(data.coins);
         })
         .catch((err) => setError(err.message))
@@ -37,7 +77,8 @@ export default function ShopPanel({ open, onClose, onUpdate }) {
       setCoins(result.coins);
       setOwnedItems(result.ownedItems);
       setActiveFelt(result.activeFelt);
-      onUpdate?.({ coins: result.coins, activeFelt: result.activeFelt });
+      setActiveCardBack(result.activeCardBack);
+      onUpdate?.({ coins: result.coins, activeFelt: result.activeFelt, activeCardBack: result.activeCardBack });
     } catch (err) {
       setError(err.message);
     }
@@ -48,7 +89,8 @@ export default function ShopPanel({ open, onClose, onUpdate }) {
     try {
       const result = await equipItem(itemId);
       setActiveFelt(result.activeFelt);
-      onUpdate?.({ activeFelt: result.activeFelt });
+      setActiveCardBack(result.activeCardBack);
+      onUpdate?.({ activeFelt: result.activeFelt, activeCardBack: result.activeCardBack });
     } catch (err) {
       setError(err.message);
     }
@@ -84,42 +126,78 @@ export default function ShopPanel({ open, onClose, onUpdate }) {
         {loading ? (
           <p className="shop-loading">Loading...</p>
         ) : (
-          <section className="shop-items">
-            <h4>Table Felt Colors</h4>
-            {itemList.map((item) => {
-              const owned = ownedItems.includes(item.id);
-              const equipped = item.id === activeFelt;
-              return (
-                <div key={item.id} className={`shop-item ${equipped ? 'equipped' : ''}`}>
-                  <span
-                    className="shop-item-swatch"
-                    style={{ backgroundColor: item.colors.fill }}
-                  />
-                  <div className="shop-item-info">
-                    <span className="shop-item-name">{item.name}</span>
-                    <span className="shop-item-price">
-                      {item.price === 0 ? 'Free' : `${item.price} coins`}
-                    </span>
+          <>
+            <section className="shop-items">
+              <h4>Table Felt Colors</h4>
+              {feltList.map((item) => {
+                const owned = ownedItems.includes(item.id);
+                const equipped = item.id === activeFelt;
+                return (
+                  <div key={item.id} className={`shop-item ${equipped ? 'equipped' : ''}`}>
+                    <span
+                      className="shop-item-swatch"
+                      style={{ backgroundColor: item.colors.fill }}
+                    />
+                    <div className="shop-item-info">
+                      <span className="shop-item-name">{item.name}</span>
+                      <span className="shop-item-price">
+                        {item.price === 0 ? 'Free' : `${item.price} coins`}
+                      </span>
+                    </div>
+                    <div className="shop-item-action">
+                      {equipped ? (
+                        <span className="shop-equipped-label">Equipped</span>
+                      ) : owned ? (
+                        <button className="shop-equip-btn" onClick={() => handleEquip(item.id)}>Equip</button>
+                      ) : (
+                        <button
+                          className="shop-buy-btn"
+                          disabled={coins < item.price}
+                          onClick={() => handlePurchase(item.id)}
+                        >
+                          Buy
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="shop-item-action">
-                    {equipped ? (
-                      <span className="shop-equipped-label">Equipped</span>
-                    ) : owned ? (
-                      <button className="shop-equip-btn" onClick={() => handleEquip(item.id)}>Equip</button>
-                    ) : (
-                      <button
-                        className="shop-buy-btn"
-                        disabled={coins < item.price}
-                        onClick={() => handlePurchase(item.id)}
-                      >
-                        Buy
-                      </button>
-                    )}
+                );
+              })}
+            </section>
+
+            <section className="shop-items">
+              <h4>Card Backs</h4>
+              {cardBackList.map((item) => {
+                const owned = ownedItems.includes(item.id);
+                const equipped = item.id === activeCardBack;
+                return (
+                  <div key={item.id} className={`shop-item ${equipped ? 'equipped' : ''}`}>
+                    <CardBackPreview frame={item.frame} />
+                    <div className="shop-item-info">
+                      <span className="shop-item-name">{item.name}</span>
+                      <span className="shop-item-price">
+                        {item.price === 0 ? 'Free' : `${item.price} coins`}
+                      </span>
+                    </div>
+                    <div className="shop-item-action">
+                      {equipped ? (
+                        <span className="shop-equipped-label">Equipped</span>
+                      ) : owned ? (
+                        <button className="shop-equip-btn" onClick={() => handleEquip(item.id)}>Equip</button>
+                      ) : (
+                        <button
+                          className="shop-buy-btn"
+                          disabled={coins < item.price}
+                          onClick={() => handlePurchase(item.id)}
+                        >
+                          Buy
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </section>
+                );
+              })}
+            </section>
+          </>
         )}
       </nav>
     </>

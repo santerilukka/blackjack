@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SHOP_ITEMS } from '@blackjack/shared';
+import { SHOP_ITEMS, CARD_BACK_ITEMS } from '@blackjack/shared';
 import { getCosmetics, purchaseItem, equipItem } from '../models/userManager.js';
 
 const router = Router();
@@ -9,7 +9,7 @@ const router = Router();
  */
 router.get('/', (req, res) => {
   const cosmetics = getCosmetics(req.session.username);
-  res.json({ items: SHOP_ITEMS, ...cosmetics });
+  res.json({ items: SHOP_ITEMS, cardBackItems: CARD_BACK_ITEMS, ...cosmetics });
 });
 
 /**

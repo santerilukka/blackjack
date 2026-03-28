@@ -1,4 +1,4 @@
-import { DEFAULT_BALANCE, DEFAULT_FELT, SHOP_ITEMS } from '@blackjack/shared';
+import { DEFAULT_BALANCE, DEFAULT_FELT, DEFAULT_CARD_BACK, SHOP_ITEMS, CARD_BACK_ITEMS } from '@blackjack/shared';
 
 /**
  * @typedef {Object} UserData
@@ -7,6 +7,7 @@ import { DEFAULT_BALANCE, DEFAULT_FELT, SHOP_ITEMS } from '@blackjack/shared';
  * @property {number} coins
  * @property {string[]} ownedItems - Item IDs the user has purchased
  * @property {string} activeFelt - Currently equipped felt item ID
+ * @property {string} activeCardBack - Currently equipped card back item ID
  * @property {string} createdAt - ISO date string
  */
 
@@ -58,8 +59,9 @@ export function createUser(username) {
     username,
     balance: DEFAULT_BALANCE,
     coins: 0,
-    ownedItems: [DEFAULT_FELT],
+    ownedItems: [DEFAULT_FELT, DEFAULT_CARD_BACK],
     activeFelt: DEFAULT_FELT,
+    activeCardBack: DEFAULT_CARD_BACK,
     createdAt: new Date().toISOString(),
   };
   users.set(username, user);
@@ -116,7 +118,7 @@ export function getBalance(username) {
 export function getCosmetics(username) {
   const user = users.get(username);
   if (!user) throw new Error(`User not found: ${username}`);
-  return { coins: user.coins, ownedItems: user.ownedItems, activeFelt: user.activeFelt };
+  return { coins: user.coins, ownedItems: user.ownedItems, activeFelt: user.activeFelt, activeCardBack: user.activeCardBack };
 }
 
 /**
@@ -143,16 +145,23 @@ export function purchaseItem(username, itemId) {
   const user = users.get(username);
   if (!user) throw new Error(`User not found: ${username}`);
 
-  const item = SHOP_ITEMS[itemId];
+  const feltItem = SHOP_ITEMS[itemId];
+  const cardBackItem = CARD_BACK_ITEMS[itemId];
+  const item = feltItem || cardBackItem;
   if (!item) throw new Error('Unknown item');
   if (user.ownedItems.includes(itemId)) throw new Error('Already owned');
   if (user.coins < item.price) throw new Error('Insufficient coins');
 
   user.coins -= item.price;
   user.ownedItems.push(itemId);
-  user.activeFelt = itemId;
 
-  return { coins: user.coins, ownedItems: user.ownedItems, activeFelt: user.activeFelt };
+  if (cardBackItem) {
+    user.activeCardBack = itemId;
+  } else {
+    user.activeFelt = itemId;
+  }
+
+  return { coins: user.coins, ownedItems: user.ownedItems, activeFelt: user.activeFelt, activeCardBack: user.activeCardBack };
 }
 
 /**
@@ -165,11 +174,18 @@ export function equipItem(username, itemId) {
   const user = users.get(username);
   if (!user) throw new Error(`User not found: ${username}`);
 
-  if (!SHOP_ITEMS[itemId]) throw new Error('Unknown item');
+  const feltItem = SHOP_ITEMS[itemId];
+  const cardBackItem = CARD_BACK_ITEMS[itemId];
+  if (!feltItem && !cardBackItem) throw new Error('Unknown item');
   if (!user.ownedItems.includes(itemId)) throw new Error('Item not owned');
 
-  user.activeFelt = itemId;
-  return { activeFelt: user.activeFelt };
+  if (cardBackItem) {
+    user.activeCardBack = itemId;
+  } else {
+    user.activeFelt = itemId;
+  }
+
+  return { activeFelt: user.activeFelt, activeCardBack: user.activeCardBack };
 }
 
 /**

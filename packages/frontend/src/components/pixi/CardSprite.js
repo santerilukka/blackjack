@@ -6,7 +6,17 @@ const RANK_NAME = {
   'J': 'jack', 'Q': 'queen', 'K': 'king', 'A': 'ace',
 };
 
-const CARD_BACK_FRAME = 'back_red_1';
+let currentCardBack = 'back_red_1';
+
+/** @param {string} frame */
+export function setCardBack(frame) {
+  currentCardBack = frame;
+}
+
+/** @returns {string} */
+export function getCardBack() {
+  return currentCardBack;
+}
 
 /** @type {Spritesheet | null} */
 let spritesheet = null;
@@ -42,7 +52,7 @@ export async function loadCardSpritesheet() {
  * @returns {string}
  */
 export function cardFrameName(card) {
-  if (!card) return CARD_BACK_FRAME;
+  if (!card) return currentCardBack;
   const rank = RANK_NAME[card.rank] || card.rank;
   return `${rank}_${card.suit}`;
 }

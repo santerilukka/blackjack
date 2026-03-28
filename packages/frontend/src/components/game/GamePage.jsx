@@ -3,6 +3,7 @@ import { PHASES, MAX_BET, SHOP_ITEMS } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
 import { play, toggleMute, getVolume, setVolume, isMuted, preloadAll } from '../../audio/SoundManager.js';
+import { setCardBack } from '../pixi/CardSprite.js';
 import BetPanel from './BetPanel.jsx';
 import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
@@ -29,6 +30,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
   const [shopOpen, setShopOpen] = useState(false);
   const [coins, setCoins] = useState(user?.coins ?? 0);
   const [activeFelt, setActiveFelt] = useState(user?.activeFelt ?? 'felt_green');
+  const [activeCardBack, setActiveCardBack] = useState(user?.activeCardBack ?? 'back_red_1');
   const [betAmount, setBetAmount] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [shuffling, setShuffling] = useState(false);
@@ -56,6 +58,11 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
       document.documentElement.style.setProperty('--color-bg', '#0a1f11');
     };
   }, [activeFelt]);
+
+  // Sync PixiJS card back with the active card back cosmetic
+  useEffect(() => {
+    setCardBack(activeCardBack);
+  }, [activeCardBack]);
 
   const addChip = useCallback((chipValue) => {
     const cap = Math.min(gameState?.balance ?? Infinity, MAX_BET);
@@ -123,9 +130,10 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
     }
   }, [newRound]);
 
-  const handleShopUpdate = useCallback(({ coins: newCoins, activeFelt: newFelt }) => {
+  const handleShopUpdate = useCallback(({ coins: newCoins, activeFelt: newFelt, activeCardBack: newBack }) => {
     if (newCoins != null) setCoins(newCoins);
     if (newFelt != null) setActiveFelt(newFelt);
+    if (newBack != null) setActiveCardBack(newBack);
   }, []);
 
   useEffect(() => {

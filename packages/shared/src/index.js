@@ -20,6 +20,6 @@ export { DEFAULT_RULES, createRules } from './ruleConfig.js';
 
 export { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from './shortcuts.js';
 
-export { SHOP_ITEMS, DEFAULT_FELT } from './shopItems.js';
+export { SHOP_ITEMS, DEFAULT_FELT, CARD_BACK_ITEMS, DEFAULT_CARD_BACK } from './shopItems.js';
 
 export { TABLES } from './tables.js';
