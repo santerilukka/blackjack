@@ -28,6 +28,14 @@ export function resolveKeyAction(key, phase, availableActions) {
     return { type: 'toggleMute' };
   }
 
+  // Volume up/down — always available
+  if (key === SHORTCUTS.VOLUME_UP.key) {
+    return { type: 'volumeUp' };
+  }
+  if (key === SHORTCUTS.VOLUME_DOWN.key) {
+    return { type: 'volumeDown' };
+  }
+
   // Betting phase
   if (phase === PHASES.BETTING) {
     const chipIndex = parseInt(key, 10) - 1;

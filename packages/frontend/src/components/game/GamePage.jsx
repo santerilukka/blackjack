@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { PHASES, MAX_BET, SHOP_ITEMS } from '@blackjack/shared';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveKeyAction } from '../../hooks/keyboardHandler.js';
-import { play, toggleMute, preloadAll } from '../../audio/SoundManager.js';
+import { play, toggleMute, getVolume, setVolume, isMuted, preloadAll } from '../../audio/SoundManager.js';
 import BetPanel from './BetPanel.jsx';
 import ActionBar from './ActionBar.jsx';
 import SideMenu from './SideMenu.jsx';
@@ -32,6 +32,8 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
   const [betAmount, setBetAmount] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [shuffling, setShuffling] = useState(false);
+  const [volume, _setVolume] = useState(getVolume);
+  const [muted, _setMuted] = useState(isMuted);
   const chipHistoryRef = useRef([]);
   const pixiRef = useRef(null);
   const toggleMenu = useCallback(() => {
@@ -130,7 +132,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
       if (!action) return;
       e.preventDefault();
 
-      if (action.type !== 'toggleMute') play('uiClick');
+      if (action.type !== 'toggleMute' && action.type !== 'volumeUp' && action.type !== 'volumeDown') play('uiClick');
 
       switch (action.type) {
         case 'toggleMenu': toggleMenu(); break;
@@ -146,7 +148,9 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
         case 'insuranceYes': insurance(true); break;
         case 'insuranceNo': insurance(false); break;
         case 'newRound': handleNewRound(); break;
-        case 'toggleMute': toggleMute(); break;
+        case 'toggleMute': { const m = toggleMute(); _setMuted(m); break; }
+        case 'volumeUp': { const v = Math.min(1, getVolume() + 0.05); setVolume(v); _setVolume(v); break; }
+        case 'volumeDown': { const v = Math.max(0, getVolume() - 0.05); setVolume(v); _setVolume(v); break; }
       }
     }
 
@@ -182,6 +186,10 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
         username={user?.username}
         onLogout={onLogout}
         onLeaveTable={onLeaveTable}
+        volume={volume}
+        muted={muted}
+        onVolumeChange={(v) => { setVolume(v); _setVolume(v); }}
+        onMuteToggle={() => { const m = toggleMute(); _setMuted(m); }}
       />
 
       <ShopPanel

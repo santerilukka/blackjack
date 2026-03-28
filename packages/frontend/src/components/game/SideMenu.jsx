@@ -1,19 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { SHORTCUTS, CHIP_SHORTCUT_DESCRIPTION } from '@blackjack/shared';
 import { logout } from '../../services/api.js';
-import { getVolume, setVolume, isMuted, toggleMute } from '../../audio/SoundManager.js';
 
-export default function SideMenu({ open, onClose, balance, phase, username, onLogout, onLeaveTable }) {
+export default function SideMenu({ open, onClose, balance, phase, username, onLogout, onLeaveTable, volume, muted, onVolumeChange, onMuteToggle }) {
   const menuRef = useRef(null);
-  const [volume, _setVolume] = useState(getVolume);
-  const [muted, _setMuted] = useState(isMuted);
 
   useEffect(() => {
     if (open && menuRef.current) {
       menuRef.current.focus();
-      // Sync state in case mute was toggled via keyboard
-      _setVolume(getVolume());
-      _setMuted(isMuted());
     }
   }, [open]);
 
@@ -56,28 +50,36 @@ export default function SideMenu({ open, onClose, balance, phase, username, onLo
           <h3>Sound</h3>
           <div className="sound-controls">
             <button
-              className="mute-btn"
-              onClick={() => {
-                const newMuted = toggleMute();
-                _setMuted(newMuted);
-              }}
+              className={`mute-btn ${muted ? 'muted' : ''}`}
+              onClick={onMuteToggle}
             >
-              {muted ? 'Unmute' : 'Mute'} <kbd>{SHORTCUTS.MUTE.label}</kbd>
+              {muted ? (
+                <svg className="mute-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              ) : (
+                <svg className="mute-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              )}
+              {muted ? 'Muted' : 'Sound On'}
+              <kbd>{SHORTCUTS.MUTE.label}</kbd>
             </button>
             <label className="volume-label">
-              Volume
+              <span className="volume-text">Volume <kbd>+</kbd> <kbd>-</kbd></span>
               <input
+                className="volume-slider"
                 type="range"
                 min="0"
                 max="1"
                 step="0.05"
                 value={muted ? 0 : volume}
                 disabled={muted}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  setVolume(v);
-                  _setVolume(v);
-                }}
+                onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
               />
             </label>
           </div>

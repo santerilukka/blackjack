@@ -17,6 +17,8 @@ export const SHORTCUTS = {
   SHOP:       { key: 'b', label: 'B', description: 'Toggle shop' },
   LOGOUT:     { key: 'l', label: 'L', description: 'Log out (in menu)' },
   MUTE:       { key: '0', label: '0', description: 'Toggle mute' },
+  VOLUME_UP:  { key: '+', label: '+', description: 'Volume up' },
+  VOLUME_DOWN:{ key: '-', label: '-', description: 'Volume down' },
 };
 
 /** Chip placement uses number keys 1-5 */
