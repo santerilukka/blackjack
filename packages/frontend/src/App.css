@@ -118,6 +118,15 @@
   min-width: 100px;
 }
 
+.bet-controls-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bet-controls-row > button {
+  flex: 1;
+}
+
 .chip-btn {
   position: relative;
   background: none;
@@ -196,6 +205,34 @@
 
 .clear-btn:disabled {
   opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rebet-btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.5));
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.rebet-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.55), rgba(5, 150, 105, 0.7));
+  border-color: rgba(16, 185, 129, 0.8);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
+.rebet-btn:active:not(:disabled) {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.7), rgba(4, 120, 87, 0.8));
+}
+
+.rebet-btn:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -906,12 +943,10 @@ button kbd, .play-btn kbd {
     margin-top: 2px;
   }
 
-  /* Bet controls — side by side */
+  /* Bet controls */
   .bet-controls {
-    flex-direction: row;
     min-width: unset;
-    gap: 0.5rem;
-    justify-content: center;
+    gap: 0.4rem;
   }
 
   .deal-btn, .new-round-btn {
@@ -920,6 +955,11 @@ button kbd, .play-btn kbd {
   }
 
   .clear-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .rebet-btn {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
   }

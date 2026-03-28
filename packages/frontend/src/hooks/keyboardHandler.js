@@ -42,6 +42,9 @@ export function resolveKeyAction(key, phase, availableActions) {
     if (chipIndex >= 0 && chipIndex < CHIP_VALUES.length) {
       return { type: 'addChip', payload: CHIP_VALUES[chipIndex] };
     }
+    if (key === SHORTCUTS.REBET.key) {
+      return { type: 'reBet' };
+    }
     if (key === 'enter') {
       return { type: 'deal' };
     }

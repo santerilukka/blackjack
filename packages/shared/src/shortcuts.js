@@ -10,6 +10,7 @@ export const SHORTCUTS = {
   SURRENDER:  { key: 'r', label: 'R', description: 'Surrender' },
   INSURANCE_YES: { key: 'y', label: 'Y', description: 'Accept insurance' },
   INSURANCE_NO:  { key: 'n', label: 'N', description: 'Decline insurance' },
+  REBET:      { key: 'q', label: 'Q', description: 'Re-bet last amount' },
   DEAL:       { key: 'enter', label: 'Enter', description: 'Deal' },
   NEW_ROUND:  { key: 'n', label: 'N', description: 'New round' },
   MENU:       { key: 'm', label: 'M', description: 'Toggle menu' },

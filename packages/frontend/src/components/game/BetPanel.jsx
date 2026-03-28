@@ -3,8 +3,9 @@ import { CHIP_VALUES } from '../../hooks/keyboardHandler.js';
 import { chipFlatPath } from '../../utils/chipConfig.js';
 import { play } from '../../audio/SoundManager.js';
 
-export default function BetPanel({ balance, displayBalance, betAmount, onAddChip, onDeal, onClearBet, disabled }) {
+export default function BetPanel({ balance, displayBalance, betAmount, onAddChip, onDeal, onClearBet, onReBet, lastBetAmount, disabled }) {
   const shownBalance = displayBalance ?? balance;
+  const reBetDisabled = disabled || !lastBetAmount || lastBetAmount > balance || betAmount > 0;
   return (
     <div className="bet-panel">
       <div className="balance-display">
@@ -34,9 +35,14 @@ export default function BetPanel({ balance, displayBalance, betAmount, onAddChip
         })}
       </div>
       <div className="bet-controls">
-        <button className="clear-btn" onClick={() => { play('uiClick'); onClearBet(); }} disabled={disabled || betAmount <= 0}>
-          Clear <kbd>C</kbd>
-        </button>
+        <div className="bet-controls-row">
+          <button className="clear-btn" onClick={() => { play('uiClick'); onClearBet(); }} disabled={disabled || betAmount <= 0}>
+            Clear <kbd>C</kbd>
+          </button>
+          <button className="rebet-btn" onClick={() => { play('uiClick'); onReBet(); }} disabled={reBetDisabled}>
+            Re-Bet {lastBetAmount > 0 && `($${lastBetAmount})`} <kbd>{SHORTCUTS.REBET.label}</kbd>
+          </button>
+        </div>
         <button className="deal-btn" onClick={() => { play('uiClick'); onDeal(); }} disabled={disabled || betAmount <= 0}>
           Deal (${betAmount}) <kbd>{SHORTCUTS.DEAL.label}</kbd>
         </button>

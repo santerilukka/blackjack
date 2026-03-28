@@ -35,6 +35,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
   const [volume, _setVolume] = useState(getVolume);
   const [muted, _setMuted] = useState(isMuted);
   const chipHistoryRef = useRef([]);
+  const lastBetChipsRef = useRef(null);
   const pixiRef = useRef(null);
   const toggleMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
@@ -100,9 +101,20 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
   const doDeal = useCallback(() => {
     if (gameState && betAmount > 0 && betAmount <= gameState.balance) {
+      lastBetChipsRef.current = [...chipHistoryRef.current];
       placeBet(betAmount);
     }
   }, [gameState, betAmount, placeBet]);
+
+  const reBet = useCallback(() => {
+    if (!lastBetChipsRef.current || lastBetChipsRef.current.length === 0) return;
+    const total = lastBetChipsRef.current.reduce((s, v) => s + v, 0);
+    if (total > (gameState?.balance ?? 0)) return;
+    clearBet();
+    for (const chip of lastBetChipsRef.current) {
+      addChip(chip);
+    }
+  }, [gameState?.balance, clearBet, addChip]);
 
   const handleNewRound = useCallback(async () => {
     const result = await newRound();
@@ -140,6 +152,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
         case 'addChip': addChip(action.payload); break;
         case 'deal': doDeal(); break;
         case 'clearBet': clearBet(); break;
+        case 'reBet': reBet(); break;
         case 'hit': hit(); break;
         case 'stand': stand(); break;
         case 'double': double(); break;
@@ -156,7 +169,7 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, handleNewRound, toggleMenu, toggleShop, doDeal, addChip, clearBet]);
+  }, [gameState, loading, animating, hit, stand, double, split, surrender, insurance, handleNewRound, toggleMenu, toggleShop, doDeal, addChip, clearBet, reBet]);
 
   if (!gameState) {
     return <div className="game-page">Loading...</div>;
@@ -219,6 +232,8 @@ export default function GamePage({ user, tableId, onLogout, onLeaveTable }) {
             onAddChip={addChip}
             onDeal={doDeal}
             onClearBet={clearBet}
+            onReBet={reBet}
+            lastBetAmount={lastBetChipsRef.current ? lastBetChipsRef.current.reduce((s, v) => s + v, 0) : 0}
             disabled={loading || animating || !isBetting}
           />
         </div>
